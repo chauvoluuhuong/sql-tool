@@ -63,7 +63,6 @@ export async function validateAndGetConfig(): Promise<EnvConfig> {
   // Set defaults for optional variables
   config.DB_SSL = config.DB_SSL ?? false;
   config.LOG_LEVEL = process.env.LOG_LEVEL || "info";
-
   if (missingVars.length > 0) {
     console.log(chalk.yellow("\n⚠️  Missing required environment variables:"));
     console.log(chalk.red(missingVars.map((v) => `  - ${v}`).join("\n")));

@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "dev": "tsx app.ts",
+    "debug": "NODE_OPTIONS=--inspect=0.0.0.0:9229 tsx watch --clear-screen=false app.ts",
     "clean": "rm -rf dist"
   },
   "keywords": [

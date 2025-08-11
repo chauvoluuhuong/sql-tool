@@ -23,6 +23,11 @@ export class SQLToolCLI {
       .description("AI-powered SQL tool with LangGraph.js")
       .version("1.0.0");
 
+    // Default action when no subcommand is provided: show command menu
+    program.action(async () => {
+      await this.showCommandMenu();
+    });
+
     // Interactive mode command
     program
       .command("chat")
@@ -60,14 +65,76 @@ export class SQLToolCLI {
       });
   }
 
+  private async showCommandMenu(): Promise<void> {
+    console.log(chalk.cyan("\nSQL Tool - Select a command to get started:"));
+
+    const choices = [
+      { name: "Chat - Start interactive chat mode", value: "chat" },
+      {
+        name: "Query - Execute a single natural language question",
+        value: "query",
+      },
+      { name: "Setup - Set up environment configuration", value: "setup" },
+      { name: "Test - Test database and AI connections", value: "test" },
+      { name: "Exit", value: "exit" },
+    ];
+
+    const { selected } = await inquirer.prompt([
+      {
+        type: "list",
+        name: "selected",
+        message: "Choose a command",
+        choices,
+      },
+    ]);
+    console.log("selected: ", selected);
+
+    switch (selected) {
+      case "chat":
+        await this.initializeApp();
+        await this.startInteractiveMode();
+        break;
+      case "query": {
+        const { question } = await inquirer.prompt([
+          {
+            type: "input",
+            name: "question",
+            message: chalk.blue("Enter your question:"),
+            validate: (input: string) =>
+              input.trim().length > 0 || "Please enter a question",
+          },
+        ]);
+        await this.initializeApp();
+        await this.processQuery(question.trim());
+        await this.cleanup();
+        process.exit(0);
+        break;
+      }
+      case "setup":
+        await this.setupEnvironment();
+        await this.cleanup();
+        process.exit(0);
+        break;
+      case "test":
+        await this.testConnections();
+        await this.cleanup();
+        process.exit(0);
+        break;
+      case "exit":
+      default:
+        console.log(chalk.cyan("👋 Goodbye!"));
+        await this.cleanup();
+        process.exit(0);
+    }
+  }
+
   private async initializeApp(): Promise<void> {
     if (this.isInitialized) return;
-
-    const spinner = ora("Initializing SQL Tool...").start();
 
     try {
       // Validate and get configuration
       const config = await validateAndGetConfig();
+      const spinner = ora("Initializing SQL Tool...").start();
 
       // Save configuration to .env file if it doesn't exist
       if (!existsSync(".env")) {
