@@ -27,6 +27,16 @@ const requiredEnvVars = [
   "DB_PASSWORD",
 ];
 
+const ENVIRONMENT_VARIABLES_DEFAULT_VALUES = {
+  DB_PORT: 5432,
+  DB_SSL: false,
+  LOG_LEVEL: "info",
+  DB_NAME: "postgres",
+  DB_USER: "postgres",
+  DB_PASSWORD: "postgres",
+  DB_HOST: "localhost",
+};
+
 function isPlaceholder(value: string): boolean {
   const v = value.trim().toLowerCase();
   return (
@@ -78,12 +88,29 @@ export async function validateAndGetConfig(): Promise<EnvConfig> {
       missingVars.map((varName) => ({
         type: varName.includes("PASSWORD") ? "password" : "input",
         name: varName,
-        message: `Enter ${varName}:`,
+        message:
+          varName in ENVIRONMENT_VARIABLES_DEFAULT_VALUES
+            ? `Enter ${varName} (default: ${
+                ENVIRONMENT_VARIABLES_DEFAULT_VALUES[
+                  varName as keyof typeof ENVIRONMENT_VARIABLES_DEFAULT_VALUES
+                ]
+              }):`
+            : `Enter ${varName}:`,
+        default:
+          varName in ENVIRONMENT_VARIABLES_DEFAULT_VALUES
+            ? (ENVIRONMENT_VARIABLES_DEFAULT_VALUES[
+                varName as keyof typeof ENVIRONMENT_VARIABLES_DEFAULT_VALUES
+              ] as any)
+            : undefined,
         validate: (input: string) => {
-          if (!input.trim()) {
+          // Allow blank input when a default exists; the default will be used
+          if (
+            !input.trim() &&
+            !(varName in ENVIRONMENT_VARIABLES_DEFAULT_VALUES)
+          ) {
             return `${varName} is required`;
           }
-          if (varName === "DB_PORT") {
+          if (varName === "DB_PORT" && input.trim()) {
             const port = parseInt(input, 10);
             if (isNaN(port) || port < 1 || port > 65535) {
               return "Port must be a valid number between 1 and 65535";
@@ -95,11 +122,24 @@ export async function validateAndGetConfig(): Promise<EnvConfig> {
     );
 
     // Update config with user-provided values
-    Object.assign(config, answers);
+    for (const varName of missingVars) {
+      const provided = (answers as any)[varName];
+      const hasDefault = varName in ENVIRONMENT_VARIABLES_DEFAULT_VALUES;
+      if (
+        (provided === undefined || String(provided).trim() === "") &&
+        hasDefault
+      ) {
+        (config as any)[varName] = ENVIRONMENT_VARIABLES_DEFAULT_VALUES[
+          varName as keyof typeof ENVIRONMENT_VARIABLES_DEFAULT_VALUES
+        ] as any;
+      } else {
+        (config as any)[varName] = provided;
+      }
+    }
 
     // Convert DB_PORT to number if provided
-    if ((answers as any).DB_PORT) {
-      config.DB_PORT = parseInt((answers as any).DB_PORT, 10);
+    if ((config as any).DB_PORT) {
+      config.DB_PORT = parseInt(String((config as any).DB_PORT), 10);
     }
   }
 

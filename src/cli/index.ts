@@ -130,33 +130,37 @@ export class SQLToolCLI {
 
   private async initializeApp(): Promise<void> {
     if (this.isInitialized) return;
+    let spinner = ora("Initializing SQL Tool...");
+    let connected = false;
+    while (!connected) {
+      try {
+        // Validate and get configuration
+        const config = await validateAndGetConfig();
+        spinner.start();
 
-    try {
-      // Validate and get configuration
-      const config = await validateAndGetConfig();
-      const spinner = ora("Initializing SQL Tool...").start();
+        // Save configuration to .env file if it doesn't exist
+        if (!existsSync(".env")) {
+          const envContent = Object.entries(config)
+            .map(([key, value]) => `${key}=${value}`)
+            .join("\n");
+          writeFileSync(".env", envContent);
+          console.log(chalk.green("\n✅ Configuration saved to .env file"));
+        }
 
-      // Save configuration to .env file if it doesn't exist
-      if (!existsSync(".env")) {
-        const envContent = Object.entries(config)
-          .map(([key, value]) => `${key}=${value}`)
-          .join("\n");
-        writeFileSync(".env", envContent);
-        console.log(chalk.green("\n✅ Configuration saved to .env file"));
+        spinner.text = "Connecting to database...";
+        await dbManager.initialize(config);
+
+        spinner.text = "Connecting to ChatGPT...";
+        await chatGPTManager.initialize(config);
+
+        spinner.succeed("SQL Tool initialized successfully!");
+        this.isInitialized = true;
+        connected = true;
+      } catch (error) {
+        console.log("error: ", error);
+        spinner.fail("Failed to initialize SQL Tool");
+        console.error(chalk.red("Error:"), error);
       }
-
-      spinner.text = "Connecting to database...";
-      await dbManager.initialize(config);
-
-      spinner.text = "Connecting to ChatGPT...";
-      await chatGPTManager.initialize(config);
-
-      spinner.succeed("SQL Tool initialized successfully!");
-      this.isInitialized = true;
-    } catch (error) {
-      spinner.fail("Failed to initialize SQL Tool");
-      console.error(chalk.red("Error:"), error);
-      process.exit(1);
     }
   }
 
