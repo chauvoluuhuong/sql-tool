@@ -3,7 +3,11 @@ import inquirer from "inquirer";
 import chalk from "chalk";
 import ora from "ora";
 import { writeFileSync, existsSync } from "fs";
-import { validateAndGetConfig, getConfig } from "../config/env.js";
+import {
+  validateAndGetConfig,
+  getConfig,
+  requiredEnvVars,
+} from "../config/env.js";
 import { dbManager } from "../database/connection.js";
 import { chatGPTManager } from "../ai/chatgpt.js";
 import { sqlWorkflow } from "../graph/workflow.js";
@@ -132,10 +136,11 @@ export class SQLToolCLI {
     if (this.isInitialized) return;
     let spinner = ora("Initializing SQL Tool...");
     let connected = false;
+    let missingVars: string[] = [];
     while (!connected) {
       try {
         // Validate and get configuration
-        const config = await validateAndGetConfig();
+        const config = await validateAndGetConfig(missingVars);
         spinner.start();
 
         // Save configuration to .env file if it doesn't exist
@@ -159,7 +164,9 @@ export class SQLToolCLI {
       } catch (error) {
         console.log("error: ", error);
         spinner.fail("Failed to initialize SQL Tool");
-        console.error(chalk.red("Error:"), error);
+        console.log(chalk.yellow("Please setup again"));
+        missingVars = requiredEnvVars;
+        console.log(chalk.red("Error:"), error);
       }
     }
   }

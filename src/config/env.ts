@@ -18,7 +18,7 @@ export interface EnvConfig {
   LOG_LEVEL: string;
 }
 
-const requiredEnvVars = [
+export const requiredEnvVars = [
   "OPENAI_API_KEY",
   "DB_HOST",
   "DB_PORT",
@@ -28,7 +28,7 @@ const requiredEnvVars = [
 ];
 
 const ENVIRONMENT_VARIABLES_DEFAULT_VALUES = {
-  DB_PORT: 5432,
+  DB_PORT: "5432",
   DB_SSL: false,
   LOG_LEVEL: "info",
   DB_NAME: "postgres",
@@ -47,32 +47,32 @@ function isPlaceholder(value: string): boolean {
   );
 }
 
-export async function validateAndGetConfig(): Promise<EnvConfig> {
-  const missingVars: string[] = [];
+export async function validateAndGetConfig(
+  missingVars: string[] = []
+): Promise<EnvConfig> {
   const config: Partial<EnvConfig> = {};
 
   // Check which environment variables are missing
-  for (const envVar of requiredEnvVars) {
-    const value = process.env[envVar];
-    if (!value || value.trim() === "" || isPlaceholder(value)) {
-      missingVars.push(envVar);
-    } else {
-      switch (envVar) {
-        case "DB_PORT":
-          config.DB_PORT = parseInt(value, 10);
-          break;
-        case "DB_SSL":
-          config.DB_SSL = value.toLowerCase() === "true";
-          break;
-        default:
-          (config as any)[envVar] = value;
+  if (missingVars.length === 0) {
+    for (const envVar of requiredEnvVars) {
+      const value = process.env[envVar];
+      if (!value || value.trim() === "" || isPlaceholder(value)) {
+        missingVars.push(envVar);
+      } else {
+        switch (envVar) {
+          case "DB_PORT":
+            config.DB_PORT = parseInt(value, 10);
+            break;
+          case "DB_SSL":
+            config.DB_SSL = value.toLowerCase() === "true";
+            break;
+          default:
+            (config as any)[envVar] = value;
+        }
       }
     }
   }
 
-  // Set defaults for optional variables
-  config.DB_SSL = config.DB_SSL ?? false;
-  config.LOG_LEVEL = process.env.LOG_LEVEL || "info";
   if (missingVars.length > 0) {
     console.log(chalk.yellow("\n⚠️  Missing required environment variables:"));
     console.log(chalk.red(missingVars.map((v) => `  - ${v}`).join("\n")));
