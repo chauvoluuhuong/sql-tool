@@ -1,8 +1,8 @@
 import { Command } from "commander";
-import inquirer from "inquirer";
+import { select, text as clackText, isCancel, cancel } from "@clack/prompts";
 import chalk from "chalk";
 import ora from "ora";
-import { writeFileSync, existsSync } from "fs";
+import { writeFileSync, existsSync, readFileSync } from "fs";
 import {
   validateAndGetConfig,
   getConfig,
@@ -72,25 +72,26 @@ export class SQLToolCLI {
   private async showCommandMenu(): Promise<void> {
     console.log(chalk.cyan("\nSQL Tool - Select a command to get started:"));
 
-    const choices = [
-      { name: "Chat - Start interactive chat mode", value: "chat" },
-      {
-        name: "Query - Execute a single natural language question",
-        value: "query",
-      },
-      { name: "Setup - Set up environment configuration", value: "setup" },
-      { name: "Test - Test database and AI connections", value: "test" },
-      { name: "Exit", value: "exit" },
-    ];
-
-    const { selected } = await inquirer.prompt([
-      {
-        type: "list",
-        name: "selected",
-        message: "Choose a command",
-        choices,
-      },
-    ]);
+    const selected = await select({
+      message: "Choose a command",
+      options: [
+        { label: "Chat - Start interactive chat mode", value: "chat" },
+        {
+          label: "Query - Execute a single natural language question",
+          value: "query",
+        },
+        { label: "Setup - Set up environment configuration", value: "setup" },
+        { label: "Test - Test database and AI connections", value: "test" },
+        { label: "Exit", value: "exit" },
+      ],
+      initialValue: "chat",
+    });
+    if (isCancel(selected)) {
+      cancel("Operation cancelled.");
+      console.log(chalk.cyan("👋 Goodbye!"));
+      await this.cleanup();
+      process.exit(0);
+    }
     console.log("selected: ", selected);
 
     switch (selected) {
@@ -99,17 +100,18 @@ export class SQLToolCLI {
         await this.startInteractiveMode();
         break;
       case "query": {
-        const { question } = await inquirer.prompt([
-          {
-            type: "input",
-            name: "question",
-            message: chalk.blue("Enter your question:"),
-            validate: (input: string) =>
-              input.trim().length > 0 || "Please enter a question",
-          },
-        ]);
+        const question = await clackText({
+          message: chalk.blue("Enter your question:"),
+          validate: (input: string) =>
+            input.trim().length > 0 ? undefined : "Please enter a question",
+        });
+        if (isCancel(question)) {
+          cancel("Operation cancelled.");
+          await this.cleanup();
+          process.exit(0);
+        }
         await this.initializeApp();
-        await this.processQuery(question.trim());
+        await this.processQuery(String(question).trim());
         await this.cleanup();
         process.exit(0);
         break;
@@ -143,14 +145,11 @@ export class SQLToolCLI {
         const config = await validateAndGetConfig(missingVars);
         spinner.start();
 
-        // Save configuration to .env file if it doesn't exist
-        if (!existsSync(".env")) {
-          const envContent = Object.entries(config)
-            .map(([key, value]) => `${key}=${value}`)
-            .join("\n");
-          writeFileSync(".env", envContent);
-          console.log(chalk.green("\n✅ Configuration saved to .env file"));
-        }
+        // Persist configuration to .env (merge/update keys)
+        this.updateEnvFile(
+          config as unknown as Record<string, string | number | boolean>
+        );
+        console.log(chalk.green("\n✅ Configuration saved to .env file"));
 
         spinner.text = "Connecting to database...";
         await dbManager.initialize(config);
@@ -171,6 +170,43 @@ export class SQLToolCLI {
     }
   }
 
+  private updateEnvFile(
+    config: Record<string, string | number | boolean>
+  ): void {
+    const path = ".env";
+    let current = existsSync(path) ? readFileSync(path, "utf8") : "";
+    const lines = current.split(/\r?\n/);
+    const updatedKeys = new Set<string>();
+
+    // Replace existing keys
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line || line.trim().startsWith("#")) continue;
+      const eqIndex = line.indexOf("=");
+      if (eqIndex === -1) continue;
+      const key = line.slice(0, eqIndex).trim();
+      if (key in config) {
+        const value = String(config[key]);
+        lines[i] = `${key}=${value}`;
+        updatedKeys.add(key);
+      }
+    }
+
+    // Append missing keys
+    for (const [key, value] of Object.entries(config)) {
+      if (!updatedKeys.has(key)) {
+        lines.push(`${key}=${String(value)}`);
+      }
+    }
+
+    const content = lines
+      .filter(
+        (l, idx, arr) => !(l === "" && (idx === 0 || arr[idx - 1] === ""))
+      )
+      .join("\n");
+    writeFileSync(path, content.endsWith("\n") ? content : content + "\n");
+  }
+
   private async startInteractiveMode(): Promise<void> {
     console.log(chalk.cyan("\n🚀 Welcome to SQL Tool Interactive Mode!"));
     console.log(
@@ -183,34 +219,28 @@ export class SQLToolCLI {
     );
 
     while (true) {
-      try {
-        const { input } = await inquirer.prompt([
-          {
-            type: "input",
-            name: "input",
-            message: chalk.blue("SQL Tool >"),
-            validate: (input: string) =>
-              input.trim().length > 0 || "Please enter a question or command",
-          },
-        ]);
+      const input = await clackText({
+        message: chalk.blue("SQL Tool >"),
+        validate: (input: string) =>
+          input.trim().length > 0
+            ? undefined
+            : "Please enter a question or command",
+      });
 
-        const trimmedInput = input.trim();
-
-        // Handle special commands
-        if (trimmedInput.startsWith("/")) {
-          await this.handleCommand(trimmedInput);
-          continue;
-        }
-
-        // Process regular queries
-        await this.processQuery(trimmedInput);
-      } catch (error) {
-        if (error && typeof error === "object" && "isTtyError" in error) {
-          // User pressed Ctrl+C
-          break;
-        }
-        console.error(chalk.red("Error:"), error);
+      if (isCancel(input)) {
+        break;
       }
+
+      const trimmedInput = String(input).trim();
+
+      // Handle special commands
+      if (trimmedInput.startsWith("/")) {
+        await this.handleCommand(trimmedInput);
+        continue;
+      }
+
+      // Process regular queries
+      await this.processQuery(trimmedInput);
     }
 
     await this.cleanup();
@@ -406,7 +436,7 @@ export class SQLToolCLI {
   }
 }
 
-// Handle graceful shutdown
+// WARNING: when running by dev command the tsx watch cause SIGN INIT when selecting by using inquirer
 process.on("SIGINT", async () => {
   console.log(
     chalk.yellow("\n\n⚠️  Received interrupt signal. Cleaning up...")

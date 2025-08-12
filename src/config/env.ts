@@ -1,7 +1,11 @@
 import { config } from "dotenv";
 import { existsSync } from "fs";
-import { join } from "path";
-import inquirer from "inquirer";
+import {
+  text,
+  password as clackPassword,
+  isCancel,
+  cancel,
+} from "@clack/prompts";
 import chalk from "chalk";
 
 // Load environment variables
@@ -84,57 +88,50 @@ export async function validateAndGetConfig(
 
     console.log(chalk.cyan("\nPlease provide the missing values:"));
 
-    const answers = await inquirer.prompt(
-      missingVars.map((varName) => ({
-        type: varName.includes("PASSWORD") ? "password" : "input",
-        name: varName,
-        message:
-          varName in ENVIRONMENT_VARIABLES_DEFAULT_VALUES
-            ? `Enter ${varName} (default: ${
-                ENVIRONMENT_VARIABLES_DEFAULT_VALUES[
-                  varName as keyof typeof ENVIRONMENT_VARIABLES_DEFAULT_VALUES
-                ]
-              }):`
-            : `Enter ${varName}:`,
-        default:
-          varName in ENVIRONMENT_VARIABLES_DEFAULT_VALUES
-            ? (ENVIRONMENT_VARIABLES_DEFAULT_VALUES[
-                varName as keyof typeof ENVIRONMENT_VARIABLES_DEFAULT_VALUES
-              ] as any)
-            : undefined,
-        validate: (input: string) => {
-          // Allow blank input when a default exists; the default will be used
-          if (
-            !input.trim() &&
-            !(varName in ENVIRONMENT_VARIABLES_DEFAULT_VALUES)
-          ) {
-            return `${varName} is required`;
-          }
-          if (varName === "DB_PORT" && input.trim()) {
-            const port = parseInt(input, 10);
-            if (isNaN(port) || port < 1 || port > 65535) {
-              return "Port must be a valid number between 1 and 65535";
-            }
-          }
-          return true;
-        },
-      }))
-    );
-
-    // Update config with user-provided values
     for (const varName of missingVars) {
-      const provided = (answers as any)[varName];
       const hasDefault = varName in ENVIRONMENT_VARIABLES_DEFAULT_VALUES;
-      if (
-        (provided === undefined || String(provided).trim() === "") &&
-        hasDefault
-      ) {
-        (config as any)[varName] = ENVIRONMENT_VARIABLES_DEFAULT_VALUES[
-          varName as keyof typeof ENVIRONMENT_VARIABLES_DEFAULT_VALUES
-        ] as any;
-      } else {
-        (config as any)[varName] = provided;
+      const defaultValue = hasDefault
+        ? String(
+            ENVIRONMENT_VARIABLES_DEFAULT_VALUES[
+              varName as keyof typeof ENVIRONMENT_VARIABLES_DEFAULT_VALUES
+            ]
+          )
+        : undefined;
+
+      const message = hasDefault
+        ? `Enter ${varName} (default: ${defaultValue}):`
+        : `Enter ${varName}:`;
+
+      const validate = (input: string) => {
+        if (!input.trim() && !hasDefault) {
+          return `${varName} is required`;
+        }
+        if (varName === "DB_PORT" && input.trim()) {
+          const port = parseInt(input, 10);
+          if (isNaN(port) || port < 1 || port > 65535) {
+            return "Port must be a valid number between 1 and 65535";
+          }
+        }
+        return undefined;
+      };
+
+      const promptFn: typeof text = varName.includes("PASSWORD")
+        ? (clackPassword as unknown as typeof text)
+        : text;
+      const answer = await promptFn({
+        message,
+        initialValue: defaultValue,
+        validate,
+      });
+
+      if (isCancel(answer)) {
+        cancel("Operation cancelled.");
+        throw new Error("User cancelled configuration prompts");
       }
+
+      const provided = String(answer ?? "");
+      (config as any)[varName] =
+        provided.trim() === "" && hasDefault ? defaultValue : provided;
     }
 
     // Convert DB_PORT to number if provided
