@@ -232,119 +232,11 @@ export class SQLToolCLI {
       }
 
       const trimmedInput = String(input).trim();
-
-      // Handle special commands
-      if (trimmedInput.startsWith("/")) {
-        await this.handleCommand(trimmedInput);
-        continue;
-      }
-
       // Process regular queries
       await this.processQuery(trimmedInput);
     }
 
     await this.cleanup();
-  }
-
-  private async handleCommand(command: string): Promise<void> {
-    const [cmd, ...args] = command.split(" ");
-
-    switch (cmd) {
-      case "/help":
-        console.log(chalk.cyan("\nAvailable commands:"));
-        console.log(chalk.white("  /help          - Show this help message"));
-        console.log(
-          chalk.white("  /tables        - List all tables in the database")
-        );
-        console.log(
-          chalk.white("  /schema <table> - Show schema for a specific table")
-        );
-        console.log(chalk.white("  /exit          - Exit the application"));
-        console.log(
-          chalk.gray("\nOr just type your question in natural language!\n")
-        );
-        break;
-
-      case "/tables":
-        try {
-          const result = await dbManager.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            ORDER BY table_name;
-          `);
-
-          console.log(chalk.green("\n📋 Available tables:"));
-          result.rows.forEach((row: any) => {
-            console.log(chalk.white(`  • ${row.table_name}`));
-          });
-          console.log();
-        } catch (error) {
-          console.error(chalk.red("Failed to retrieve tables:"), error);
-        }
-        break;
-
-      case "/schema":
-        if (!args[0]) {
-          console.log(
-            chalk.yellow("Please specify a table name: /schema <table_name>")
-          );
-          break;
-        }
-
-        try {
-          const tableName = args[0];
-          const result = await dbManager.query(
-            `
-            SELECT 
-              column_name,
-              data_type,
-              is_nullable,
-              column_default
-            FROM information_schema.columns 
-            WHERE table_name = $1
-            ORDER BY ordinal_position;
-          `,
-            [tableName]
-          );
-
-          if (result.rows.length === 0) {
-            console.log(chalk.yellow(`Table '${tableName}' not found.`));
-            break;
-          }
-
-          console.log(chalk.green(`\n📋 Schema for table '${tableName}':`));
-          result.rows.forEach((row: any) => {
-            const nullable =
-              row.is_nullable === "YES" ? "(nullable)" : "(required)";
-            const defaultVal = row.column_default
-              ? ` default: ${row.column_default}`
-              : "";
-            console.log(
-              chalk.white(
-                `  • ${row.column_name}: ${row.data_type} ${nullable}${defaultVal}`
-              )
-            );
-          });
-          console.log();
-        } catch (error) {
-          console.error(chalk.red("Failed to retrieve schema:"), error);
-        }
-        break;
-
-      case "/exit":
-        console.log(chalk.cyan("👋 Goodbye!"));
-        await this.cleanup();
-        process.exit(0);
-        break;
-
-      default:
-        console.log(
-          chalk.yellow(
-            `Unknown command: ${cmd}. Type /help for available commands.`
-          )
-        );
-    }
   }
 
   private async processQuery(question: string): Promise<void> {
