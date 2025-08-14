@@ -9,6 +9,7 @@
     "start": "node dist/app.js",
     "dev:watch": "tsx watch app.ts",
     "dev": "tsx app.ts",
+    "dev:chat": "tsx watch app.ts chat",
     "clean": "rm -rf dist"
   },
   "keywords": [
