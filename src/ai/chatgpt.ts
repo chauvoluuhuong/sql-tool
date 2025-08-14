@@ -1,6 +1,7 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { EnvConfig } from "../config/env.js";
 import chalk from "chalk";
+import { sqlTools } from "../tools/index.js";
 
 class ChatGPTManager {
   private model: ChatOpenAI | null = null;
@@ -16,6 +17,7 @@ class ChatGPTManager {
         temperature: 0.1,
         maxTokens: 2000,
       });
+      this.model.bindTools(sqlTools);
 
       // Test the connection with a simple query
       const res = await this.model.invoke([

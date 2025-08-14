@@ -172,11 +172,3 @@ export const sqlTools = [
   getAllTablesTool,
   testConnectionTool,
 ];
-
-// Export tools by name for easier access
-export const toolsByName = {
-  execute_query: executeQueryTool,
-  get_table_schema: getTableSchemaTool,
-  get_all_tables: getAllTablesTool,
-  test_connection: testConnectionTool,
-};
