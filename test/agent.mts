@@ -1,8 +1,13 @@
 // agent.mts
 
-// IMPORTANT - Add your API keys here. Be careful not to publish them.
-process.env.OPENAI_API_KEY =
-  "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";
+// Load environment variables from .env file
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Ensure OpenAI API key is set
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error('OPENAI_API_KEY environment variable is required');
+}
 
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
