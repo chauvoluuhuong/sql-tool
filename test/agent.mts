@@ -1,12 +1,12 @@
 // agent.mts
 
 // Load environment variables from .env file
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 
 // Ensure OpenAI API key is set
 if (!process.env.OPENAI_API_KEY) {
-  throw new Error('OPENAI_API_KEY environment variable is required');
+  throw new Error("OPENAI_API_KEY environment variable is required");
 }
 
 import { ChatOpenAI } from "@langchain/openai";
