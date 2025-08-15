@@ -13,6 +13,7 @@ config();
 
 export interface EnvConfig {
   OPENAI_API_KEY: string;
+  GOOGLE_AI_API_KEY: string;
   DB_HOST: string;
   DB_PORT: number;
   DB_NAME: string;
@@ -20,10 +21,12 @@ export interface EnvConfig {
   DB_PASSWORD: string;
   DB_SSL: boolean;
   LOG_LEVEL: string;
+  MODEL: string;
 }
 
 export const requiredEnvVars = [
   "OPENAI_API_KEY",
+  "GOOGLE_AI_API_KEY",
   "DB_HOST",
   "DB_PORT",
   "DB_NAME",
@@ -146,6 +149,7 @@ export async function validateAndGetConfig(
 export function getConfig(): EnvConfig {
   return {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY!,
+    GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY!,
     DB_HOST: process.env.DB_HOST!,
     DB_PORT: parseInt(process.env.DB_PORT!, 10),
     DB_NAME: process.env.DB_NAME!,
@@ -153,5 +157,6 @@ export function getConfig(): EnvConfig {
     DB_PASSWORD: process.env.DB_PASSWORD!,
     DB_SSL: process.env.DB_SSL?.toLowerCase() === "true",
     LOG_LEVEL: process.env.LOG_LEVEL || "info",
+    MODEL: process.env.MODEL || "gpt-4",
   };
 }

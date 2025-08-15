@@ -1,11 +1,12 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { EnvConfig } from "../config/env.js";
 import chalk from "chalk";
 import { sqlTools } from "../tools/index.js";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
-class ChatGPTManager {
+class AiManager {
   private model: any;
   private config: EnvConfig | null = null;
   private systemPrompt: string = "";
@@ -22,39 +23,39 @@ class ChatGPTManager {
       );
       this.systemPrompt = readFileSync(systemPromptPath, "utf-8");
 
-      this.model = new ChatOpenAI({
-        apiKey: config.OPENAI_API_KEY,
-        model: "gpt-4",
+      this.model = new ChatGoogleGenerativeAI({
+        apiKey: config.GOOGLE_AI_API_KEY,
+        model: this.config.MODEL || "gemini-1.5-flash",
       });
       this.model.bindTools(sqlTools);
 
       // Add system prompt after model initialization
-      const systemMessage = { role: "system", content: this.systemPrompt };
+      const systemMessage = new SystemMessage(this.systemPrompt);
 
       // Test the connection with a simple query
       const res = await this.model.invoke([
         systemMessage,
-        { role: "user", content: 'Respond with "Connection successful" only.' },
+        new HumanMessage('Respond with "Connection successful" only.'),
       ]);
 
       if (!res?.content) {
         throw new Error(
-          "No response content from ChatOpenAI during initialization"
+          "No response content from AI model during initialization"
         );
       }
 
       console.log(
-        chalk.green("✅ ChatGPT connection established successfully")
+        chalk.green("✅ AI model connection established successfully")
       );
     } catch (error) {
-      console.error(chalk.red("❌ Failed to connect to ChatGPT:"), error);
+      console.error(chalk.red("❌ Failed to connect to AI model:"), error);
       throw error;
     }
   }
 
   async generateResponse(message: string, context?: string): Promise<string> {
     if (!this.model) {
-      throw new Error("ChatGPT not initialized. Call initialize() first.");
+      throw new Error("AI model not initialized. Call initialize() first.");
     }
 
     try {
@@ -64,20 +65,20 @@ class ChatGPTManager {
       }
 
       const response = await this.model.invoke([
-        { role: "system", content: this.systemPrompt },
-        { role: "user", content: prompt },
+        new SystemMessage(this.systemPrompt),
+        new HumanMessage(prompt),
       ]);
 
       return (response.content as string) ?? "";
     } catch (error) {
-      console.error(chalk.red("❌ Error generating ChatGPT response:"), error);
+      console.error(chalk.red("❌ Error generating AI response:"), error);
       throw error;
     }
   }
 
   async generateSQL(query: string, schema?: string): Promise<string> {
     if (!this.model) {
-      throw new Error("ChatGPT not initialized. Call initialize() first.");
+      throw new Error("AI model not initialized. Call initialize() first.");
     }
 
     let prompt = `You are a SQL expert. Generate a PostgreSQL query for the following request: "${query}"`;
@@ -91,8 +92,8 @@ class ChatGPTManager {
 
     try {
       const response = await this.model.invoke([
-        { role: "system", content: this.systemPrompt },
-        { role: "user", content: prompt },
+        new SystemMessage(this.systemPrompt),
+        new HumanMessage(prompt),
       ]);
 
       return (response.content as string) ?? "";
@@ -104,15 +105,15 @@ class ChatGPTManager {
 
   async explainSQL(sqlQuery: string): Promise<string> {
     if (!this.model) {
-      throw new Error("ChatGPT not initialized. Call initialize() first.");
+      throw new Error("AI model not initialized. Call initialize() first.");
     }
 
     const prompt = `Explain the following SQL query in simple terms:\n\n${sqlQuery}\n\nProvide a clear, concise explanation of what this query does.`;
 
     try {
       const response = await this.model.invoke([
-        { role: "system", content: this.systemPrompt },
-        { role: "user", content: prompt },
+        new SystemMessage(this.systemPrompt),
+        new HumanMessage(prompt),
       ]);
 
       return (response.content as string) ?? "";
@@ -126,10 +127,10 @@ class ChatGPTManager {
     return this.model !== null;
   }
 
-  getModel(): ChatOpenAI | null {
+  getModel(): ChatGoogleGenerativeAI | null {
     return this.model;
   }
 }
 
 // Singleton instance
-export const chatGPTManager = new ChatGPTManager();
+export const aiManager = new AiManager();

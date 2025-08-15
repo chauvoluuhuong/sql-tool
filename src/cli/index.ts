@@ -9,7 +9,7 @@ import {
   requiredEnvVars,
 } from "../config/env.js";
 import { dbManager } from "../database/connection.js";
-import { chatGPTManager } from "../ai/chatgpt.js";
+import { aiManager } from "../ai/chatgpt.js";
 import { sqlWorkflow } from "../graph/workflow.js";
 
 const program = new Command();
@@ -154,8 +154,8 @@ export class SQLToolCLI {
         spinner.text = "Connecting to database...";
         await dbManager.initialize(config);
 
-        spinner.text = "Connecting to ChatGPT...";
-        await chatGPTManager.initialize(config);
+        spinner.text = "Connecting to AI model...";
+        await aiManager.initialize(config);
 
         spinner.succeed("SQL Tool initialized successfully!");
         this.isInitialized = true;
@@ -303,16 +303,15 @@ export class SQLToolCLI {
       return;
     }
 
-    // Test ChatGPT connection
-    const aiSpinner = ora("Testing ChatGPT connection...").start();
+    // Test AI connection
+    const aiSpinner = ora("Testing AI connection...").start();
     try {
       const config = getConfig();
-      await chatGPTManager.initialize(config);
-      aiSpinner.succeed("ChatGPT connection successful");
+      await aiManager.initialize(config);
+      aiSpinner.succeed("AI connection successful");
     } catch (error) {
-      aiSpinner.fail("ChatGPT connection failed");
-      console.error(chalk.red("ChatGPT error:"), error);
-      return;
+      aiSpinner.fail("AI connection failed");
+      console.error(chalk.red("AI error:"), error);
     }
 
     console.log(chalk.green("\n✅ All connections are working!"));

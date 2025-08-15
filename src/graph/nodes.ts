@@ -1,5 +1,5 @@
 import { HumanMessage, AIMessage, BaseMessage } from "@langchain/core/messages";
-import { chatGPTManager } from "../ai/chatgpt.js";
+import { aiManager } from "../ai/chatgpt.js";
 import chalk from "chalk";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { sqlTools } from "../tools/index.js";
@@ -38,9 +38,9 @@ export async function chatNode(
 
   try {
     // Use the agent directly with tool binding to generate tool calls
-    const model = chatGPTManager.getModel();
+    const model = aiManager.getModel();
     if (!model) {
-      throw new Error("ChatGPT model not initialized");
+      throw new Error("AI model not initialized");
     }
 
     const response = await model.invoke([{ role: "user", content: userInput }]);
