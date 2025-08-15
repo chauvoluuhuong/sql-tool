@@ -38,12 +38,12 @@ export async function chatNode(
 
   try {
     // Use the agent directly with tool binding to generate tool calls
-    const agent = chatGPTManager.getAgent();
-    if (!agent) {
-      throw new Error("ChatGPT agent not initialized");
+    const model = chatGPTManager.getModel();
+    if (!model) {
+      throw new Error("ChatGPT model not initialized");
     }
 
-    const response = await agent.invoke([{ role: "user", content: userInput }]);
+    const response = await model.invoke([{ role: "user", content: userInput }]);
 
     // Ensure response is properly typed as BaseMessage
     const aiMessage =
@@ -74,16 +74,13 @@ export async function chatNode(
 // Should call tools node - determines if tools should be invoked
 export function shouldCallToolsNode(
   state: WorkflowState
-): WorkflowNodeNames.TOOLS | WorkflowNodeNames.EXAMPLE_NODE {
-  console.log("condition node");
+): WorkflowNodeNames.TOOLS | "__end__" {
   const last = state.messages[state.messages.length - 1] as AIMessage;
   const hasToolCalls =
     last?.tool_calls &&
     Array.isArray(last.tool_calls) &&
     last.tool_calls.length > 0;
-  return hasToolCalls
-    ? WorkflowNodeNames.TOOLS
-    : WorkflowNodeNames.EXAMPLE_NODE;
+  return hasToolCalls ? WorkflowNodeNames.TOOLS : END;
 }
 
 export function exampleNode(state: WorkflowState) {

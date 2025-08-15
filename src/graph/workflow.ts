@@ -21,13 +21,11 @@ class SQLWorkflow {
       .addNode(WorkflowNodeNames.CHAT, chatNode)
       .addNode(WorkflowNodeNames.TOOLS, toolsNode)
       .addNode(WorkflowNodeNames.FORMAT_RESULT, formatResultNode)
-      .addNode(WorkflowNodeNames.EXAMPLE_NODE, exampleNode)
       .addEdge(START, WorkflowNodeNames.CHAT)
       .addConditionalEdges(WorkflowNodeNames.CHAT, shouldCallToolsNode as any, {
         [WorkflowNodeNames.TOOLS]: WorkflowNodeNames.TOOLS,
-        [WorkflowNodeNames.EXAMPLE_NODE]: WorkflowNodeNames.EXAMPLE_NODE,
+        [END]: END,
       })
-      .addEdge(WorkflowNodeNames.EXAMPLE_NODE, END)
       .addEdge(WorkflowNodeNames.TOOLS, WorkflowNodeNames.FORMAT_RESULT)
       .addEdge(WorkflowNodeNames.FORMAT_RESULT, END);
   }

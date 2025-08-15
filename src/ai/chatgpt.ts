@@ -2,27 +2,38 @@ import { ChatOpenAI } from "@langchain/openai";
 import { EnvConfig } from "../config/env.js";
 import chalk from "chalk";
 import { sqlTools } from "../tools/index.js";
-import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 class ChatGPTManager {
   private model: any;
   private config: EnvConfig | null = null;
-  private agent: any;
+  private systemPrompt: string = "";
+
   async initialize(config: EnvConfig): Promise<void> {
     this.config = config;
     try {
+      // Load system prompt
+      const systemPromptPath = join(
+        process.cwd(),
+        "src",
+        "prompts",
+        "system.md"
+      );
+      this.systemPrompt = readFileSync(systemPromptPath, "utf-8");
+
       this.model = new ChatOpenAI({
         apiKey: config.OPENAI_API_KEY,
-        model: "gpt-5",
+        model: "gpt-4",
       });
       this.model.bindTools(sqlTools);
-      this.agent = createReactAgent({
-        llm: this.model,
-        tools: sqlTools,
-      });
+
+      // Add system prompt after model initialization
+      const systemMessage = { role: "system", content: this.systemPrompt };
 
       // Test the connection with a simple query
       const res = await this.model.invoke([
+        systemMessage,
         { role: "user", content: 'Respond with "Connection successful" only.' },
       ]);
 
@@ -41,10 +52,6 @@ class ChatGPTManager {
     }
   }
 
-  getAgent() {
-    return this.agent;
-  }
-
   async generateResponse(message: string, context?: string): Promise<string> {
     if (!this.model) {
       throw new Error("ChatGPT not initialized. Call initialize() first.");
@@ -57,6 +64,7 @@ class ChatGPTManager {
       }
 
       const response = await this.model.invoke([
+        { role: "system", content: this.systemPrompt },
         { role: "user", content: prompt },
       ]);
 
@@ -83,6 +91,7 @@ class ChatGPTManager {
 
     try {
       const response = await this.model.invoke([
+        { role: "system", content: this.systemPrompt },
         { role: "user", content: prompt },
       ]);
 
@@ -102,6 +111,7 @@ class ChatGPTManager {
 
     try {
       const response = await this.model.invoke([
+        { role: "system", content: this.systemPrompt },
         { role: "user", content: prompt },
       ]);
 
