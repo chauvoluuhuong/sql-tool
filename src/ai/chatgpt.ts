@@ -9,7 +9,6 @@ class ChatGPTManager {
 
   async initialize(config: EnvConfig): Promise<void> {
     this.config = config;
-
     try {
       this.model = new ChatOpenAI({
         apiKey: config.OPENAI_API_KEY,
@@ -108,6 +107,10 @@ class ChatGPTManager {
 
   isInitialized(): boolean {
     return this.model !== null;
+  }
+
+  getModel(): ChatOpenAI | null {
+    return this.model;
   }
 }
 

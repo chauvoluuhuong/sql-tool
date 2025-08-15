@@ -244,17 +244,17 @@ export class SQLToolCLI {
 
     try {
       // Get database context (table names for better SQL generation)
-      const tablesResult = await dbManager.query(`
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public';
-      `);
+      // const tablesResult = await dbManager.query(`
+      //   SELECT table_name
+      //   FROM information_schema.tables
+      //   WHERE table_schema = 'public';
+      // `);
 
-      const tableNames = tablesResult.rows.map((row: any) => row.table_name);
-      const context = `Available tables: ${tableNames.join(", ")}`;
+      // const tableNames = tablesResult.rows.map((row: any) => row.table_name);
+      // const context = `Available tables: ${tableNames.join(", ")}`;
 
       spinner.text = "Generating response...";
-      const response = await sqlWorkflow.processInput(question, context);
+      const response = await sqlWorkflow.processInput(question);
 
       spinner.succeed("Response generated!");
       console.log(chalk.green("\n🤖 AI Response:"));

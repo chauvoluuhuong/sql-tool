@@ -3,7 +3,7 @@ import { chatGPTManager } from "../ai/chatgpt.js";
 import chalk from "chalk";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { sqlTools } from "../tools/index.js";
-import { END } from "@langchain/langgraph";
+import { END, Annotation } from "@langchain/langgraph";
 
 // Enum for node names
 export enum WorkflowNodeNames {
@@ -11,15 +11,21 @@ export enum WorkflowNodeNames {
   SHOULD_CALL_TOOLS = "shouldCallTools",
   TOOLS = "tools",
   FORMAT_RESULT = "formatResult",
+  EXAMPLE_NODE = "exampleNode",
 }
 
-// Define the workflow state interface
-export interface WorkflowState {
-  messages: BaseMessage[];
-  currentQuery?: string;
-  sqlResult?: any;
-  context?: string;
-}
+// Define the workflow state using Annotation.Root
+export const WorkflowState = Annotation.Root({
+  messages: Annotation<BaseMessage[]>({
+    reducer: (x: BaseMessage[], y: BaseMessage[]) => x.concat(y),
+  }),
+  currentQuery: Annotation<string | undefined>(),
+  sqlResult: Annotation<any>(),
+  context: Annotation<string | undefined>(),
+});
+
+// Type inference from the annotation
+export type WorkflowState = typeof WorkflowState.State;
 
 // Chat node - handles general conversation and SQL generation
 export async function chatNode(
@@ -31,15 +37,42 @@ export async function chatNode(
   console.log(chalk.blue("🤖 Processing your request..."));
 
   try {
-    const response = await chatGPTManager.generateResponse(
-      userInput,
-      state.context
-    );
-    // Note: The response handling seems incomplete in the original code
-    // You may need to add the actual response to messages
+    // Use the model directly with tool binding to generate tool calls
+    const model = chatGPTManager.getModel();
+    if (!model) {
+      throw new Error("ChatGPT model not initialized");
+    }
+
+    // Create a system message to guide the AI to use tools when needed
+    const systemMessage = {
+      role: "system" as const,
+      content: `You are a SQL assistant. When users ask questions about databases or need SQL queries:
+1. Use get_all_tables to see available tables
+2. Use get_table_schema to understand table structure  
+3. Use execute_query to run SQL queries
+4. Always use tools when the user needs database information or SQL execution.
+
+Context: ${state.context || "No additional context provided"}`,
+    };
+
+    const response = await model.invoke([
+      systemMessage,
+      { role: "user", content: userInput },
+    ]);
+
+    // Ensure response is properly typed as BaseMessage
+    const aiMessage =
+      response instanceof AIMessage
+        ? response
+        : new AIMessage(
+            typeof response.content === "string"
+              ? response.content
+              : JSON.stringify(response.content)
+          );
+
     return {
-      messages: [...state.messages, new AIMessage(response)],
-    }; // Placeholder - adjust based on actual implementation
+      messages: [...state.messages, aiMessage],
+    };
   } catch (error) {
     console.error(chalk.red("❌ Error in chat node:"), error);
     return {
@@ -54,15 +87,25 @@ export async function chatNode(
 }
 
 // Should call tools node - determines if tools should be invoked
-export async function shouldCallToolsNode(
+export function shouldCallToolsNode(
   state: WorkflowState
-): Promise<string> {
+): WorkflowNodeNames.TOOLS | WorkflowNodeNames.EXAMPLE_NODE {
+  console.log("condition node");
   const last = state.messages[state.messages.length - 1] as AIMessage;
   const hasToolCalls =
     last?.tool_calls &&
     Array.isArray(last.tool_calls) &&
     last.tool_calls.length > 0;
-  return hasToolCalls ? WorkflowNodeNames.TOOLS : END;
+  return hasToolCalls
+    ? WorkflowNodeNames.TOOLS
+    : WorkflowNodeNames.EXAMPLE_NODE;
+}
+
+export function exampleNode(state: WorkflowState) {
+  console.log("example node");
+  return {
+    messages: [...state.messages, new AIMessage("Hello, world!")],
+  };
 }
 
 // Tools node - executes SQL tools
@@ -72,6 +115,38 @@ export const toolsNode = new ToolNode(sqlTools);
 export async function formatResultNode(
   state: WorkflowState
 ): Promise<Partial<WorkflowState>> {
+  // Get the last tool message (result from tools)
+  const lastMessage = state.messages[state.messages.length - 1];
+
+  // If the last message contains tool results, format them nicely
+  if (lastMessage && "content" in lastMessage && lastMessage.content) {
+    try {
+      // Try to parse tool results and format them
+      const content = lastMessage.content as string;
+
+      // If it looks like a tool result with SQL data, format it
+      if (content.includes('"success":true') && content.includes('"data"')) {
+        const toolResult = JSON.parse(content);
+        if (toolResult.success && toolResult.data && toolResult.data.rows) {
+          const formattedResult = formatQueryResult(toolResult.data);
+
+          return {
+            messages: [
+              ...state.messages,
+              new AIMessage(
+                `Query executed successfully!\n\n${formattedResult}`
+              ),
+            ],
+          };
+        }
+      }
+    } catch (error) {
+      // If parsing fails, just pass through the original message
+      console.log("Could not parse tool result, using original message");
+    }
+  }
+
+  // If we have sqlResult in state (legacy), use it
   if (state.sqlResult) {
     const formattedResult = formatQueryResult(state.sqlResult);
 
@@ -83,6 +158,7 @@ export async function formatResultNode(
     };
   }
 
+  // Otherwise, just return the current state
   return state;
 }
 

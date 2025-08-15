@@ -1,4 +1,4 @@
-import { Graph, START } from "@langchain/langgraph";
+import { Graph, START, StateGraph, Annotation } from "@langchain/langgraph";
 import { HumanMessage } from "@langchain/core/messages";
 import chalk from "chalk";
 import { END } from "@langchain/langgraph";
@@ -9,29 +9,27 @@ import {
   shouldCallToolsNode,
   toolsNode,
   formatResultNode,
+  exampleNode,
 } from "./nodes.js";
 
 class SQLWorkflow {
   private builder: any;
 
   constructor() {
-    // Initialize the graph builder
-    this.builder = new Graph();
-    this.setupNodes();
-    this.setupEdges();
-  }
-
-  private setupNodes(): void {
-    this.builder.addNode(chatNode);
-    this.builder.addNode(toolsNode);
-    this.builder.addNode(formatResultNode);
-  }
-
-  private setupEdges(): void {
-    this.builder.addEdge(START, chatNode);
-    this.builder.addConditionalEdges(chatNode, shouldCallToolsNode);
-    this.builder.addConditionalEdges(toolsNode, formatResultNode);
-    this.builder.addEdge(formatResultNode, END);
+    // Initialize the graph builder using the WorkflowState annotation from nodes.js
+    this.builder = new StateGraph(WorkflowState)
+      .addNode(WorkflowNodeNames.CHAT, chatNode)
+      .addNode(WorkflowNodeNames.TOOLS, toolsNode)
+      .addNode(WorkflowNodeNames.FORMAT_RESULT, formatResultNode)
+      .addNode(WorkflowNodeNames.EXAMPLE_NODE, exampleNode)
+      .addEdge(START, WorkflowNodeNames.CHAT)
+      .addConditionalEdges(WorkflowNodeNames.CHAT, shouldCallToolsNode as any, {
+        [WorkflowNodeNames.TOOLS]: WorkflowNodeNames.TOOLS,
+        [WorkflowNodeNames.EXAMPLE_NODE]: WorkflowNodeNames.EXAMPLE_NODE,
+      })
+      .addEdge(WorkflowNodeNames.EXAMPLE_NODE, END)
+      .addEdge(WorkflowNodeNames.TOOLS, WorkflowNodeNames.FORMAT_RESULT)
+      .addEdge(WorkflowNodeNames.FORMAT_RESULT, END);
   }
 
   getGraph() {
