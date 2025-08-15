@@ -37,28 +37,13 @@ export async function chatNode(
   console.log(chalk.blue("🤖 Processing your request..."));
 
   try {
-    // Use the model directly with tool binding to generate tool calls
-    const model = chatGPTManager.getModel();
-    if (!model) {
-      throw new Error("ChatGPT model not initialized");
+    // Use the agent directly with tool binding to generate tool calls
+    const agent = chatGPTManager.getAgent();
+    if (!agent) {
+      throw new Error("ChatGPT agent not initialized");
     }
 
-    // Create a system message to guide the AI to use tools when needed
-    const systemMessage = {
-      role: "system" as const,
-      content: `You are a SQL assistant. When users ask questions about databases or need SQL queries:
-1. Use get_all_tables to see available tables
-2. Use get_table_schema to understand table structure  
-3. Use execute_query to run SQL queries
-4. Always use tools when the user needs database information or SQL execution.
-
-Context: ${state.context || "No additional context provided"}`,
-    };
-
-    const response = await model.invoke([
-      systemMessage,
-      { role: "user", content: userInput },
-    ]);
+    const response = await agent.invoke([{ role: "user", content: userInput }]);
 
     // Ensure response is properly typed as BaseMessage
     const aiMessage =

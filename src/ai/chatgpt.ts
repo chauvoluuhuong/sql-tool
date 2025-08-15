@@ -2,21 +2,24 @@ import { ChatOpenAI } from "@langchain/openai";
 import { EnvConfig } from "../config/env.js";
 import chalk from "chalk";
 import { sqlTools } from "../tools/index.js";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
 
 class ChatGPTManager {
-  private model: ChatOpenAI | null = null;
+  private model: any;
   private config: EnvConfig | null = null;
-
+  private agent: any;
   async initialize(config: EnvConfig): Promise<void> {
     this.config = config;
     try {
       this.model = new ChatOpenAI({
         apiKey: config.OPENAI_API_KEY,
-        model: "gpt-4o",
-        temperature: 0.1,
-        maxTokens: 2000,
+        model: "gpt-5",
       });
       this.model.bindTools(sqlTools);
+      this.agent = createReactAgent({
+        llm: this.model,
+        tools: sqlTools,
+      });
 
       // Test the connection with a simple query
       const res = await this.model.invoke([
@@ -36,6 +39,10 @@ class ChatGPTManager {
       console.error(chalk.red("❌ Failed to connect to ChatGPT:"), error);
       throw error;
     }
+  }
+
+  getAgent() {
+    return this.agent;
   }
 
   async generateResponse(message: string, context?: string): Promise<string> {

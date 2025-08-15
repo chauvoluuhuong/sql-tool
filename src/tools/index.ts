@@ -172,3 +172,15 @@ export const sqlTools = [
   getAllTablesTool,
   testConnectionTool,
 ];
+
+// Export tools as a map with tool names as keys (dynamically generated)
+export const toolsWithName = new Map(sqlTools.map((tool) => [tool.name, tool]));
+
+// Alternative: Export as a plain object for easier access
+export const toolsByName = sqlTools.reduce(
+  (acc, tool) => {
+    acc[tool.name] = tool;
+    return acc;
+  },
+  {} as Record<string, (typeof sqlTools)[number]>
+);

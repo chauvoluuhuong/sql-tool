@@ -14,7 +14,7 @@ import {
 
 class SQLWorkflow {
   private builder: any;
-
+  private agent: any;
   constructor() {
     // Initialize the graph builder using the WorkflowState annotation from nodes.js
     this.builder = new StateGraph(WorkflowState)
