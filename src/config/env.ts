@@ -32,6 +32,7 @@ export const requiredEnvVars = [
   "DB_NAME",
   "DB_USER",
   "DB_PASSWORD",
+  "MODEL",
 ];
 
 const ENVIRONMENT_VARIABLES_DEFAULT_VALUES = {
@@ -42,6 +43,7 @@ const ENVIRONMENT_VARIABLES_DEFAULT_VALUES = {
   DB_USER: "postgres",
   DB_PASSWORD: "postgres",
   DB_HOST: "localhost",
+  MODEL: "gemini-1.5-flash",
 };
 
 function isPlaceholder(value: string): boolean {

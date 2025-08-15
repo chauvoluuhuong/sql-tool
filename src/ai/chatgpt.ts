@@ -1,5 +1,5 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { EnvConfig } from "../config/env.js";
+import { EnvConfig, getConfig } from "../config/env.js";
 import chalk from "chalk";
 import { sqlTools } from "../tools/index.js";
 import { readFileSync } from "fs";
@@ -24,10 +24,10 @@ class AiManager {
       this.systemPrompt = readFileSync(systemPromptPath, "utf-8");
 
       this.model = new ChatGoogleGenerativeAI({
-        apiKey: config.GOOGLE_AI_API_KEY,
-        model: this.config.MODEL || "gemini-1.5-flash",
+        apiKey: this.config.GOOGLE_AI_API_KEY,
+        model: this.config.MODEL,
       });
-      this.model.bindTools(sqlTools);
+      // .bindTools(sqlTools);
 
       // Add system prompt after model initialization
       const systemMessage = new SystemMessage(this.systemPrompt);
