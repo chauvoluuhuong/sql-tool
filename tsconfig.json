@@ -2,8 +2,9 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "outDir": "./dist",
+    "baseUrl": "./",
     "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
@@ -13,8 +14,18 @@
     "declarationMap": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": false,
+    "moduleDetection": "force",
+    "paths": {
+      "@/*": ["src/*"],
+      "modules/*": ["src/modules/*"],
+      "src/*": ["src/*"]
+    }
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist"],
+  "ts-node": {
+    "esm": true
+  }
 }

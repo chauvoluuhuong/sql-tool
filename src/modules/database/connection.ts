@@ -1,12 +1,21 @@
 import { Pool, PoolClient } from "pg";
 import chalk from "chalk";
-import { EnvConfig } from "../config/env.js";
+import { EnvConfig } from "../../config/config";
+
+export interface DatabaseConfig {
+  DB_HOST: string;
+  DB_PORT: number;
+  DB_NAME: string;
+  DB_USER: string;
+  DB_PASSWORD: string;
+  DB_SSL: boolean;
+}
 
 class DatabaseManager {
   private pool: Pool | null = null;
-  private config: EnvConfig | null = null;
+  private config: DatabaseConfig | null = null;
 
-  async initialize(config: EnvConfig): Promise<void> {
+  async initialize(config: DatabaseConfig): Promise<void> {
     this.config = config;
 
     this.pool = new Pool({
