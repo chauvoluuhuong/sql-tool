@@ -1,6 +1,6 @@
 import { Pool, PoolClient } from "pg";
 import chalk from "chalk";
-import { EnvConfig } from "../config/env.js";
+import { EnvConfig } from "../../config/config";
 
 class DatabaseManager {
   private pool: Pool | null = null;

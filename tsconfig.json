@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "outDir": "./dist",
+    "baseUrl": "./",
     "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
@@ -15,7 +16,12 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": false,
-    "moduleDetection": "force"
+    "moduleDetection": "force",
+    "paths": {
+      "@/*": ["src/*"],
+      "modules/*": ["src/modules/*"],
+      "src/*": ["src/*"]
+    }
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist"],
