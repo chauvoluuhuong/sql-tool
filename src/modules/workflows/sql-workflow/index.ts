@@ -7,8 +7,10 @@ import { buildModel } from "modules/ai";
 import { loadCredentials } from "modules/setup/setupModel";
 import { callModel } from "./nodes";
 import { shouldContinue } from "./nodes";
+import { dbManager } from "@/modules/database/connection";
 
 export const buildWorkflow = async () => {
+  await dbManager.initialize();
   const credentials = await loadCredentials();
   const model = buildModel(credentials, tools);
   if (!model) {

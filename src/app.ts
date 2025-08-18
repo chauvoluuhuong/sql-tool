@@ -1,7 +1,6 @@
 import { intro, outro, select } from "@clack/prompts";
 import { setupModel } from "modules/setup/setupModel";
 import { setupDatabase } from "modules/setup/setupDatabase";
-import { buildWorkflow } from "modules/workflows/basic";
 import { conversation } from "modules/conversations";
 import { readdir } from "fs/promises";
 import { join } from "path";
@@ -78,10 +77,18 @@ async function main() {
   intro("🤖 LangGraph Application");
   let workflow;
 
-  const config = loadAppConfig();
-  if (config.selectedWorkflowName) {
-    workflow = await getWorkflowDynamically(config.selectedWorkflowName);
-    intro(`Using default workflow: ${config.selectedWorkflowName}`);
+  try {
+    const config = loadAppConfig();
+    if (config.selectedWorkflowName) {
+      workflow = await getWorkflowDynamically(config.selectedWorkflowName);
+      intro(`Using default workflow: ${config.selectedWorkflowName}`);
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.warn(`Can't build default workflow: ${error.message}`);
+    } else {
+      console.warn(`Can't build default workflow: ${error}`);
+    }
   }
   while (true) {
     try {
