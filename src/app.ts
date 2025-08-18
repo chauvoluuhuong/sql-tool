@@ -5,15 +5,31 @@ import { buildWorkflow } from "modules/workflows/basic";
 import { conversation } from "modules/conversations";
 import { readdir } from "fs/promises";
 import { join } from "path";
-import { loadEnvConfigFromFile } from "./config/config";
+import {
+  loadAppConfig,
+  loadEnvConfigFromFile,
+  writeAppConfig,
+} from "./config/config";
+loadEnvConfigFromFile();
 
-console.log("config: ", loadEnvConfigFromFile());
+async function getWorkflowDynamically(workflowName: string) {
+  const workflowModule = await import(`modules/workflows/${workflowName}`);
+  if (!workflowModule.buildWorkflow) {
+    console.log(
+      `❌ buildWorkflow function not found in ${workflowName} -> you should implement it`
+    );
+    return null;
+  }
+  return await workflowModule.buildWorkflow();
+}
+
 async function selectWorkflow() {
   try {
     // Read all directories in modules/workflows
     const workflowsDir = join(process.cwd(), "src", "modules", "workflows");
     const entries = await readdir(workflowsDir, { withFileTypes: true });
 
+    const config = loadAppConfig();
     // Filter for directories only (exclude files like index.ts)
     const workflowFolders = entries
       .filter((entry) => entry.isDirectory())
@@ -44,24 +60,14 @@ async function selectWorkflow() {
 
     const selectedWorkflowName = String(selectedWorkflow);
 
-    // Dynamically import the buildWorkflow function from the selected workflow
-    const workflowModule = await import(
-      `modules/workflows/${selectedWorkflowName}`
-    );
-
-    if (!workflowModule.buildWorkflow) {
-      console.log(
-        `❌ buildWorkflow function not found in ${selectedWorkflowName}`
-      );
-      return null;
-    }
-
+    config.selectedWorkflowName = selectedWorkflowName;
+    writeAppConfig(config);
     // Build and return the workflow
     console.log(`🔨 Building ${selectedWorkflowName} workflow...`);
-    const workflow = await workflowModule.buildWorkflow();
+
     console.log(`✅ ${selectedWorkflowName} workflow built successfully!`);
 
-    return workflow;
+    return getWorkflowDynamically(selectedWorkflowName);
   } catch (error) {
     console.error("❌ Error selecting workflow:", error);
     return null;
@@ -71,6 +77,12 @@ async function selectWorkflow() {
 async function main() {
   intro("🤖 LangGraph Application");
   let workflow;
+
+  const config = loadAppConfig();
+  if (config.selectedWorkflowName) {
+    workflow = await getWorkflowDynamically(config.selectedWorkflowName);
+    intro(`Using default workflow: ${config.selectedWorkflowName}`);
+  }
   while (true) {
     try {
       const choice = await select({

@@ -5,10 +5,13 @@
   },
   "gemini": {
     "modelType": "openai",
-    "modelName": "gemini-2.5-flash"
+    "modelName": "gemini-2.5-flash",
+    "apiKey": "AIzaSyAgTS7f_pplwaH-sWvg6CE_kzMfQVAD-Wk"
   },
   "openai": {
     "modelType": "gemini",
-    "modelName": "gpt-4"
-  }
+    "modelName": "gpt-4",
+    "apiKey": "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"
+  },
+  "selectedWorkflowName": "sql-workflow"
 }

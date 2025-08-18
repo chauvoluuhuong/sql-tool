@@ -1,6 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { ModelType, Config } from "src/modules/setup/setupModel";
+import { ModelType, Config } from "../../config/types";
 import { tools } from "src/modules/shared/tools";
 import { Tool } from "@langchain/core/tools";
 import { loadEnvConfigFromFile } from "@/config/config";
