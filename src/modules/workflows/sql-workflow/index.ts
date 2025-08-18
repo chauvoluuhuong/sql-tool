@@ -2,7 +2,7 @@ import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { StateGraph, MessagesAnnotation } from "@langchain/langgraph";
 // Load environment variables
 import "dotenv/config";
-import { tools } from "modules/shared/tools";
+import { tools } from "./tools";
 import { buildModel } from "modules/ai";
 import { loadCredentials } from "modules/setup/setupModel";
 import { callModel } from "./nodes";
