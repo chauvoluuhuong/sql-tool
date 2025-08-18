@@ -15,7 +15,7 @@ export async function setupDatabase(): Promise<boolean> {
     const dbHost = await text({
       message: "Database host:",
       placeholder: "localhost",
-      defaultValue: envConfig.DB_HOST,
+      initialValue: envConfig.DB_HOST,
     });
 
     if (!dbHost) {
@@ -26,7 +26,7 @@ export async function setupDatabase(): Promise<boolean> {
     const dbPort = await text({
       message: "Database port:",
       placeholder: "5432",
-      defaultValue: envConfig.DB_PORT.toString(),
+      initialValue: envConfig.DB_PORT.toString(),
     });
 
     if (!dbPort) {
@@ -37,7 +37,7 @@ export async function setupDatabase(): Promise<boolean> {
     const dbName = await text({
       message: "Database name:",
       placeholder: "postgres",
-      defaultValue: envConfig.DB_NAME,
+      initialValue: envConfig.DB_NAME,
     });
 
     if (!dbName) {
@@ -48,7 +48,7 @@ export async function setupDatabase(): Promise<boolean> {
     const dbUser = await text({
       message: "Database username:",
       placeholder: "postgres",
-      defaultValue: envConfig.DB_USER,
+      initialValue: envConfig.DB_USER,
     });
 
     if (!dbUser) {
@@ -59,7 +59,7 @@ export async function setupDatabase(): Promise<boolean> {
     const dbPassword = await text({
       message: "Database password:",
       placeholder: "Enter your database password",
-      defaultValue: envConfig.DB_PASSWORD,
+      initialValue: envConfig.DB_PASSWORD,
     });
 
     if (!dbPassword) {

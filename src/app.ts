@@ -114,7 +114,7 @@ async function main() {
         workflow = await selectWorkflow();
       } else if (choice === "exit") {
         outro("Goodbye! 👋");
-        break;
+        process.exit(0);
       } else {
         console.log("No option selected.");
         console.log("\n"); // Add spacing before returning to menu

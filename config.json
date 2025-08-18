@@ -8,7 +8,7 @@
     "modelName": "gemini-2.5-flash"
   },
   "openai": {
-    "modelType": "openai",
+    "modelType": "gemini",
     "modelName": "gpt-4"
   }
 }
