@@ -114,15 +114,22 @@ async function main() {
         }
         console.log("\n"); // Add spacing before returning to menu
       } else if (choice === "viewWorkflow") {
-        workflow = await buildWorkflow();
+        if (!workflow && config.selectedWorkflowName) {
+          workflow = await getWorkflowDynamically(config.selectedWorkflowName);
+        }
+        if (!workflow) {
+          throw new Error("Please select workflow first");
+        }
         const graph = await workflow.getGraphAsync();
         console.log(graph.drawMermaid());
         console.log("\n"); // Add spacing before returning to menu
       } else if (choice === "runConversation") {
+        if (!workflow && config.selectedWorkflowName) {
+          workflow = await getWorkflowDynamically(config.selectedWorkflowName);
+        }
         if (!workflow) {
           throw new Error("Please select workflow first");
         }
-        workflow = await buildWorkflow();
         await conversation(workflow);
         console.log("\n"); // Add spacing before returning to menu
       } else if (choice === "selectWorkflow") {

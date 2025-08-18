@@ -10,5 +10,6 @@
   "openai": {
     "modelType": "gemini",
     "modelName": "gpt-4"
-  }
+  },
+  "selectedWorkflowName": "sql-workflow"
 }
