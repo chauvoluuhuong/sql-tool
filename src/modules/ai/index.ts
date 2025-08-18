@@ -3,12 +3,15 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ModelType, Config } from "src/modules/setup/setupModel";
 import { tools } from "src/modules/shared/tools";
 import { Tool } from "@langchain/core/tools";
+import { loadEnvConfigFromFile } from "@/config/config";
 
 var model: any;
 export const buildModel = (
   credentials: Config,
   toolsProvided: Tool[] = tools
 ) => {
+  loadEnvConfigFromFile();
+
   if (credentials.modelUsed?.modelType === ModelType.OPENAI) {
     model = new ChatOpenAI({
       model: credentials.modelUsed.modelName || "gpt-4",

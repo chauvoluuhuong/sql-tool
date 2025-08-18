@@ -1,15 +1,13 @@
 import { intro, outro, select } from "@clack/prompts";
 import { setupModel } from "modules/setup/setupModel";
+import { setupDatabase } from "modules/setup/setupDatabase";
 import { buildWorkflow } from "modules/workflows/basic";
 import { conversation } from "modules/conversations";
 import { readdir } from "fs/promises";
 import { join } from "path";
+import { loadEnvConfigFromFile } from "./config/config";
 
-import dotenv from "dotenv";
-import path from "path";
-
-dotenv.config({ path: path.join(process.cwd(), ".env") });
-
+console.log("config: ", loadEnvConfigFromFile());
 async function selectWorkflow() {
   try {
     // Read all directories in modules/workflows
@@ -79,6 +77,7 @@ async function main() {
         message: "What would you like to do?",
         options: [
           { value: "setupModel", label: "Setup/Configure Model & Credentials" },
+          { value: "setupDatabase", label: "Setup/Configure Database" },
           { value: "selectWorkflow", label: "Select Workflow" },
           { value: "workflow", label: "View LangGraph Workflow Diagram" },
           { value: "runConversation", label: "Chat with the Workflow" },
@@ -92,6 +91,14 @@ async function main() {
           console.log("✅ Setup complete! 🎉");
         } else {
           console.log("❌ Setup failed or was cancelled.");
+        }
+        console.log("\n"); // Add spacing before returning to menu
+      } else if (choice === "setupDatabase") {
+        const success = await setupDatabase();
+        if (success) {
+          console.log("✅ Database setup complete! 🎉");
+        } else {
+          console.log("❌ Database setup failed or was cancelled.");
         }
         console.log("\n"); // Add spacing before returning to menu
       } else if (choice === "workflow") {

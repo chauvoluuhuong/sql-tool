@@ -2,6 +2,7 @@ import { intro, outro, select, text, note, spinner } from "@clack/prompts";
 import { writeFileSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 import _ from "lodash";
+import { createEnvConfig, writeEnvConfig } from "../../config/config";
 
 export enum ModelType {
   OPENAI = "openai",
@@ -186,14 +187,11 @@ export async function setupModel() {
       JSON.stringify(configSaved, null, 2)
     );
 
-    writeFileSync(
-      join(process.cwd(), ".env"),
-      `OPENAI_API_KEY=${
-        config[ModelType.OPENAI].apiKey || process.env.OPENAI_API_KEY
-      }\nGOOGLE_API_KEY=${
-        config[ModelType.GEMINI].apiKey || process.env.GOOGLE_API_KEY
-      }`
-    );
+    const envConfig = createEnvConfig({
+      openaiApiKey: config[ModelType.OPENAI].apiKey,
+      googleApiKey: config[ModelType.GEMINI].apiKey,
+    });
+    writeEnvConfig(envConfig);
     note("Saved configuration to config.json");
     note("You can now run your LangGraph application!");
     s.stop("✅ Saved configuration");
