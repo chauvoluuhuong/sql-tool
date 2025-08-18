@@ -79,7 +79,7 @@ async function main() {
           { value: "setupModel", label: "Setup/Configure Model & Credentials" },
           { value: "setupDatabase", label: "Setup/Configure Database" },
           { value: "selectWorkflow", label: "Select Workflow" },
-          { value: "workflow", label: "View LangGraph Workflow Diagram" },
+          { value: "viewWorkflow", label: "View LangGraph Workflow Diagram" },
           { value: "runConversation", label: "Chat with the Workflow" },
           { value: "exit", label: "Exit Application" },
         ],
@@ -101,13 +101,16 @@ async function main() {
           console.log("❌ Database setup failed or was cancelled.");
         }
         console.log("\n"); // Add spacing before returning to menu
-      } else if (choice === "workflow") {
+      } else if (choice === "viewWorkflow") {
         workflow = await buildWorkflow();
         const graph = await workflow.getGraphAsync();
         console.log(graph.drawMermaid());
         console.log("\n"); // Add spacing before returning to menu
       } else if (choice === "runConversation") {
-        const workflow = await buildWorkflow();
+        if (!workflow) {
+          throw new Error("Please select workflow first");
+        }
+        workflow = await buildWorkflow();
         await conversation(workflow);
         console.log("\n"); // Add spacing before returning to menu
       } else if (choice === "selectWorkflow") {
