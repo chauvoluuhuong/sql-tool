@@ -1,7 +1,8 @@
 {
   "modelUsed": {
     "modelType": "openai",
-    "modelName": "gemini-2.5-flash"
+    "modelName": "gemini-2.5-flash",
+    "apiKey": "AIzaSyAgTS7f_pplwaH-sWvg6CE_kzMfQVAD-Wk"
   },
   "gemini": {
     "modelType": "openai",

@@ -4,11 +4,13 @@ import { ModelType, Config } from "../../config/types";
 import { tools } from "src/modules/shared/tools";
 import { Tool } from "@langchain/core/tools";
 import { loadEnvConfigFromFile } from "@/config/config";
+import { SystemMessage } from "@langchain/core/messages";
 
 var model: any;
 export const buildModel = (
   credentials: Config,
   toolsProvided: Tool[] = tools
+  // systemPrompt?: SystemMessage
 ) => {
   loadEnvConfigFromFile();
 
@@ -32,6 +34,10 @@ export const buildModel = (
   if (toolsProvided) {
     model = model.bindTools(toolsProvided);
   }
+
+  // if (systemPrompt) {
+  //   model = model.bind({ systemMessage: systemPrompt });
+  // }
 
   return model;
 };

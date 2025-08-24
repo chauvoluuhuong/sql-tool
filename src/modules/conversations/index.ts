@@ -59,15 +59,27 @@ export const conversation = async (
       );
 
       if (toolMessages.length > 0) {
-        console.log("\n🔧 Tools used:");
-        toolMessages.forEach((msg: AIMessage) => {
-          const aiMessage = msg as AIMessage;
-          aiMessage.tool_calls?.forEach((toolCall: any) => {
-            console.log(
-              `  • ${toolCall.name}: ${toolCall.args ? JSON.stringify(toolCall.args) : "No args"}`
-            );
-          });
-        });
+        console.log("\n🔧 latest tool used:");
+        const latestTool = toolMessages[toolMessages.length - 1];
+        const latestToolCall = latestTool.tool_calls?.[0];
+        console.log(
+          `  • ${latestToolCall?.name}: ${
+            latestToolCall?.args
+              ? JSON.stringify(latestToolCall?.args)
+              : "No args"
+          }`
+        );
+
+        // toolMessages.forEach((msg: AIMessage) => {
+        //   const aiMessage = msg as AIMessage;
+        //   aiMessage.tool_calls?.forEach((toolCall: any) => {
+        //     console.log(
+        //       `  • ${toolCall.name}: ${
+        //         toolCall.args ? JSON.stringify(toolCall.args) : "No args"
+        //       }`
+        //     );
+        //   });
+        // });
       }
 
       console.log(); // Empty line for better readability
