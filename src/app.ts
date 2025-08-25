@@ -4,12 +4,8 @@ import { setupDatabase } from "modules/setup/setupDatabase";
 import { conversation } from "modules/conversations";
 import { readdir } from "fs/promises";
 import { join } from "path";
-import {
-  loadAppConfig,
-  loadEnvConfigFromFile,
-  writeAppConfig,
-} from "./config/config";
-loadEnvConfigFromFile();
+import { loadAppConfig, writeAppConfig } from "./config/config";
+import { CONFIG_DEFAULT } from "./config/types";
 
 async function getWorkflowDynamically(workflowName: string) {
   const workflowModule = await import(`modules/workflows/${workflowName}`);
@@ -76,9 +72,9 @@ async function selectWorkflow() {
 async function main() {
   intro("🤖 LangGraph Application");
   let workflow;
-
+  let config = CONFIG_DEFAULT;
   try {
-    const config = loadAppConfig();
+    config = loadAppConfig();
     if (config.selectedWorkflowName) {
       workflow = await getWorkflowDynamically(config.selectedWorkflowName);
       intro(`Using default workflow: ${config.selectedWorkflowName}`);
@@ -91,6 +87,15 @@ async function main() {
     }
   }
   while (true) {
+    try {
+      config = loadAppConfig();
+    } catch (error) {
+      console.error("❌ Error loading config:", error);
+      console.log(
+        "+++++++++++++++++Try to setup again+++++++++++++++++++++++++++++"
+      );
+      config = CONFIG_DEFAULT;
+    }
     try {
       const choice = await select({
         message: "What would you like to do?",
@@ -119,6 +124,7 @@ async function main() {
         } else {
           console.log("❌ Database setup failed or was cancelled.");
         }
+
         console.log("\n"); // Add spacing before returning to menu
       } else if (choice === "viewWorkflow") {
         if (!workflow && config.selectedWorkflowName) {

@@ -8,8 +8,8 @@
     "modelName": "gemini-2.5-flash"
   },
   "openai": {
-    "modelType": "gemini",
+    "modelType": "openai",
     "modelName": "gpt-4"
   },
-  "selectedWorkflowName": "sql-workflow"
+  "selectedWorkflowName": "basic"
 }

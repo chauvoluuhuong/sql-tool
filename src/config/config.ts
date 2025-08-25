@@ -9,6 +9,9 @@ import lodash from "lodash";
 export const loadEnvConfigFromFile = () => {
   const envPath = path.join(process.cwd(), ".env");
   dotenv.config({ path: envPath });
+  if (!existsSync(envPath)) {
+    return {};
+  }
   return dotenv.parse(readFileSync(envPath, "utf8"));
 };
 
@@ -78,11 +81,13 @@ export function loadAppConfig(): Config {
   var config = CONFIG_DEFAULT;
   const configPath = path.join(process.cwd(), "src", "config.json");
   try {
+    const envConfig = loadEnvConfig();
     if (!existsSync(configPath)) {
       writeFileSync(configPath, JSON.stringify(config, null, 2), "utf8");
     } else {
       const configSaved = JSON.parse(readFileSync(configPath, "utf8")) as any;
       config = lodash.merge(CONFIG_DEFAULT, configSaved);
+      config = lodash.merge(config, envConfig);
     }
   } catch (error) {
     // in case the config file store error content -> just override it
