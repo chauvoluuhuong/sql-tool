@@ -21,14 +21,17 @@ export interface ToolResult {
   error?: string;
 }
 
+export interface GenerateQueryRequestContext {
+  contextData?: string;
+  description: string;
+}
+
 export const SqlWorkflowState = Annotation.Root({
-  messages: Annotation<BaseMessage[]>({
-    reducer: (x, y) => x.concat(y),
-  }),
-  toolResults: Annotation<ToolResult[]>({
-    reducer: (x, y) => x.concat(y),
-    default: () => [],
-  }),
+  messages: Annotation<BaseMessage[]>,
+  toolResults: Annotation<ToolResult[]>,
+  generateQueryRequest: Annotation<string>,
+  generateQueryRequestContext: Annotation<GenerateQueryRequestContext>,
+  queryGenerated: Annotation<string>,
 });
 
 export type SqlWorkflowStateType = typeof SqlWorkflowState.State;

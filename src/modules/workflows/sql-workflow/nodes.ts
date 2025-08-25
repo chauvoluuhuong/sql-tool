@@ -54,7 +54,8 @@ export async function executeTools(state: SqlWorkflowStateType) {
   const toolCalls = lastMessage.tool_calls || [];
 
   if (toolCalls.length === 0) {
-    return { messages: [], toolResults: [] };
+    console.error("No tool calls found for executing");
+    return { messages: state.messages, toolResults: [] };
   }
 
   const responses = [];
