@@ -87,8 +87,15 @@ export const conversation = async (
 
       // Display the last assistant message
       const lastAssistantMessage =
-        response.messages[response.messages.length - 1];
-      console.log("🤖 Assistant:", lastAssistantMessage.content);
+        response?.messages?.[response?.messages?.length - 1];
+      if (!lastAssistantMessage) {
+        console.log(
+          "Look like the state graph don't have any messages field, raw response is: ",
+          response
+        );
+        continue;
+      }
+      console.log("🤖 Assistant:", lastAssistantMessage?.content);
 
       // Check if any tools were used and display them
       const toolMessages = response.messages.filter(
