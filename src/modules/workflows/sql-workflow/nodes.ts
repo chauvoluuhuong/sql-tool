@@ -7,7 +7,8 @@ import {
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { SqlWorkflowStateType, ToolResult } from "./index";
+import { SqlWorkflowStateType } from "./index";
+import { ToolResult } from "./types";
 import { tools } from "./tools";
 
 export async function callModel(state: SqlWorkflowStateType) {

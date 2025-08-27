@@ -11,34 +11,14 @@ import { buildModel } from "modules/ai";
 import { loadCredentials } from "modules/setup/setupModel";
 import { callModel, shouldContinue, executeTools } from "./nodes";
 import { dbManager } from "@/modules/database/connection";
-import { QueryDescription } from "./types";
-
+import { SqlWorkflowState } from "./types";
+import { MemorySaver } from "@langchain/langgraph-checkpoint";
 // Define custom state for SQL workflow
-export interface ToolResult {
-  toolName: string;
-  result: any;
-  timestamp: Date;
-  success: boolean;
-  error?: string;
-}
-
-export interface GenerateQueryRequestContext {
-  contextData?: string;
-  description: string;
-}
-
-export const SqlWorkflowState = Annotation.Root({
-  messages: Annotation<BaseMessage[]>,
-  toolResults: Annotation<ToolResult[]>,
-  generateQueryRequest: Annotation<string>,
-  generateQueryRequestContext: Annotation<GenerateQueryRequestContext>,
-  queryGenerated: Annotation<string>,
-  rawQueries: Annotation<QueryDescription[]>,
-});
 
 export type SqlWorkflowStateType = typeof SqlWorkflowState.State;
 
 export const buildWorkflow = async () => {
+  const checkpointer = new MemorySaver();
   await dbManager.initialize();
   const credentials = await loadCredentials();
 
@@ -53,5 +33,5 @@ export const buildWorkflow = async () => {
     .addNode("tools", executeTools)
     .addEdge("tools", "agent")
     .addConditionalEdges("agent", shouldContinue)
-    .compile();
+    .compile({ checkpointer });
 };

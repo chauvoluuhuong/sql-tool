@@ -5,7 +5,7 @@ import {
   interrupt,
 } from "@langchain/langgraph";
 import { MemorySaver } from "@langchain/langgraph-checkpoint";
-const checkpointer = new MemorySaver();
+
 // Load environment variables
 import "dotenv/config";
 import { humanRevisionNode } from "./nodes";
@@ -18,6 +18,7 @@ export const InterruptWorkflowState = Annotation.Root({
 export type InterruptWorkflowStateType = typeof InterruptWorkflowState.State;
 
 export const buildWorkflow = async () => {
+  const checkpointer = new MemorySaver();
   console.log("Building simple interrupt workflow...");
 
   return new StateGraph(InterruptWorkflowState)
