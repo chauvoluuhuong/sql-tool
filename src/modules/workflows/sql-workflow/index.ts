@@ -11,6 +11,7 @@ import { buildModel } from "modules/ai";
 import { loadCredentials } from "modules/setup/setupModel";
 import { callModel, shouldContinue, executeTools } from "./nodes";
 import { dbManager } from "@/modules/database/connection";
+import { QueryDescription } from "./types";
 
 // Define custom state for SQL workflow
 export interface ToolResult {
@@ -32,6 +33,7 @@ export const SqlWorkflowState = Annotation.Root({
   generateQueryRequest: Annotation<string>,
   generateQueryRequestContext: Annotation<GenerateQueryRequestContext>,
   queryGenerated: Annotation<string>,
+  rawQueries: Annotation<QueryDescription[]>,
 });
 
 export type SqlWorkflowStateType = typeof SqlWorkflowState.State;
@@ -44,6 +46,7 @@ export const buildWorkflow = async () => {
   if (!model) {
     throw new Error("Failed to create model");
   }
+
   return new StateGraph(SqlWorkflowState)
     .addNode("agent", callModel)
     .addEdge("__start__", "agent") // __start__ is a special name for the entrypoint

@@ -2,155 +2,55 @@ import { Tool } from "@langchain/core/tools";
 import { dbManager } from "../../database/connection";
 
 /**
- * Tool to list all tables in the database
+ * Generic tool to execute raw SQL queries
  */
-class ListAllTablesTool extends Tool {
-  name = "list_all_tables";
+class GenericQueryTool extends Tool {
+  name = "genericQuery";
   description =
-    "List all tables in the database. Use this when you need to see what tables are available.";
+    "Execute raw SQL queries. Input should be a JSON string with 'rawQuery' (the SQL query to execute) and 'queryParams' (array of parameters for the query).";
 
   protected async _call(input: string): Promise<string> {
     try {
-      const query = `
-SELECT table_schema, table_name
-FROM information_schema.tables
-WHERE table_type = 'BASE TABLE'
-  AND table_schema NOT IN ('pg_catalog', 'information_schema')
-ORDER BY table_schema, table_name;
-      `;
+      const inputData = JSON.parse(input);
+      const { rawQuery, queryParams = [] } = inputData;
 
-      const result = await dbManager.query(query);
-      const tableNames = result.rows.map((row: any) => row.table_name);
-
-      if (tableNames.length === 0) {
-        return "No tables found in the database.";
+      if (!rawQuery) {
+        return "Please provide a 'rawQuery' field with the SQL query to execute.";
       }
 
-      return `Tables in database: ${tableNames.join(", ")}`;
+      // Execute the query
+      const result = await dbManager.query(rawQuery, queryParams);
+
+      // Format the response
+      return this.formatQueryResult(result, queryParams);
     } catch (error) {
+      if (error instanceof SyntaxError) {
+        return "Invalid JSON input. Please provide a JSON string with 'rawQuery' and 'queryParams' fields.";
+      }
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      return `Error listing tables: ${errorMessage}`;
+      return `Error executing query: ${errorMessage}`;
     }
+  }
+
+  private formatQueryResult(result: any, queryParams: any[]): string {
+    if (result.rows.length === 0) {
+      return "Query executed successfully but returned no results.";
+    }
+
+    // Format the results in a readable way
+    const records = result.rows.map((row: any, index: number) => {
+      const rowData = Object.entries(row)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(", ");
+      return `Record ${index + 1}: {${rowData}}`;
+    });
+
+    return `Query executed successfully. Returned ${
+      result.rows.length
+    } row(s):\n${records.join("\n")}`;
   }
 }
 
-/**
- * Tool to get schema information for a specific table
- */
-class GetTableSchemaTool extends Tool {
-  name = "get_table_schema";
-  description =
-    "Get the schema (column information) for a specific table. Input should be the table name.";
-
-  protected async _call(input: string): Promise<string> {
-    try {
-      const tableName = input.trim();
-
-      if (!tableName) {
-        return "Please provide a table name to get its schema.";
-      }
-
-      const query = `
-        SELECT 
-          column_name,
-          data_type,
-          is_nullable,
-          column_default,
-          character_maximum_length,
-          ordinal_position
-        FROM information_schema.columns 
-        WHERE table_name = $1 AND table_schema = 'public'
-        ORDER BY ordinal_position;
-      `;
-
-      const result = await dbManager.query(query, [tableName]);
-
-      if (result.rows.length === 0) {
-        return `Table '${tableName}' not found or has no columns.`;
-      }
-
-      const schemaInfo = result.rows.map((row: any) => {
-        const nullable = row.is_nullable === "YES" ? "NULL" : "NOT NULL";
-        const length = row.character_maximum_length
-          ? `(${row.character_maximum_length})`
-          : "";
-        const defaultValue = row.column_default
-          ? ` DEFAULT ${row.column_default}`
-          : "";
-
-        return `${row.column_name} ${row.data_type}${length} ${nullable}${defaultValue}`;
-      });
-
-      return `Schema for table '${tableName}':\n${schemaInfo.join("\n")}`;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return `Error getting table schema: ${errorMessage}`;
-    }
-  }
-}
-
-/**
- * Tool to get first ten records from a specific table
- */
-class GetFirstTenRecordsTool extends Tool {
-  name = "get_first_ten_records";
-  description =
-    "Get the first 10 records from a specific table. Input should be the table name.";
-
-  protected async _call(input: string): Promise<string> {
-    try {
-      const tableName = input.trim();
-
-      if (!tableName) {
-        return "Please provide a table name to get records from.";
-      }
-
-      // First check if table exists
-      const tableExistsQuery = `
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' AND table_name = $1
-        );
-      `;
-
-      const tableExistsResult = await dbManager.query(tableExistsQuery, [
-        tableName,
-      ]);
-      if (!tableExistsResult.rows[0].exists) {
-        return `Table '${tableName}' does not exist.`;
-      }
-
-      const query = `SELECT * FROM "${tableName}" LIMIT 10`;
-      const result = await dbManager.query(query);
-
-      if (result.rows.length === 0) {
-        return `Table '${tableName}' exists but contains no records.`;
-      }
-
-      // Format the results in a readable way
-      const records = result.rows.map((row: any, index: number) => {
-        const rowData = Object.entries(row)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join(", ");
-        return `Record ${index + 1}: {${rowData}}`;
-      });
-
-      return `First ${
-        result.rows.length
-      } records from table '${tableName}':\n${records.join("\n")}`;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return `Error getting records: ${errorMessage}`;
-    }
-  }
-}
-
-// Export the tools array following the same pattern as shared tools
-export const tools = [
-  new ListAllTablesTool(),
-  new GetTableSchemaTool(),
-  new GetFirstTenRecordsTool(),
-];
+// Export the tools array with the single generic query tool
+export const tools = [new GenericQueryTool()];
