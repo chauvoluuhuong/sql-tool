@@ -7,3 +7,22 @@ export const getRelateFilePath = (directories: string[]) => {
   const __dirname = dirname(__filename);
   return join(__dirname, ...directories);
 };
+
+export function parseModelResponse(raw: string, schema: any) {
+  // 1. Remove Markdown code fences if present
+  const cleaned = raw
+    .replace(/```json/i, "")
+    .replace(/```/g, "")
+    .trim();
+
+  // 2. Parse JSON safely
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (err) {
+    throw new Error("Invalid JSON from model: " + err);
+  }
+
+  // 3. Validate against schema
+  return schema.parse(parsed);
+}

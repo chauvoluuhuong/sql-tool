@@ -34,6 +34,7 @@ export const SqlWorkflowState = Annotation.Root({
   // the model requests to generate a query
   requestGenerateQuery: Annotation<boolean>,
   queryGenerated: Annotation<string>,
+  properQueryFound: Annotation<string>,
   // does user accept to generate query or not
   onRequestGenerateQuery: Annotation<boolean>,
   // the model query schema table or provided from user to generate query

@@ -13,8 +13,9 @@ import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { SqlWorkflowStateType } from "./index";
-import { ToolResult, QueryDescription } from "./types";
+import { ToolResult, QueryDescription, OutPutStructureSchema } from "./types";
 import { tools } from "./tools";
+import { parseModelResponse } from "modules/utils";
 
 export async function callModel(state: SqlWorkflowStateType) {
   const model = getModel();
@@ -52,9 +53,13 @@ export async function callModel(state: SqlWorkflowStateType) {
     new SystemMessage(systemPrompt),
     lastUserMessage,
   ]);
+  let outputJson = {};
+  try {
+    outputJson = parseModelResponse(response.content, OutPutStructureSchema);
+  } catch (err) {}
 
   // We return a list, because this will get added to the existing list
-  return { messages: [response] };
+  return { messages: [response], ...outputJson };
 }
 
 // Define the function that determines whether to continue or not
