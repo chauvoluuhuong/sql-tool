@@ -1,14 +1,19 @@
 import { getModel } from "modules/ai";
-import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import {
+  AIMessage,
+  HumanMessage,
+  SystemMessage,
+} from "@langchain/core/messages";
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,
+  PromptTemplate,
 } from "@langchain/core/prompts";
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { SqlWorkflowStateType } from "./index";
-import { ToolResult } from "./types";
+import { ToolResult, QueryDescription } from "./types";
 import { tools } from "./tools";
 
 export async function callModel(state: SqlWorkflowStateType) {
@@ -18,20 +23,34 @@ export async function callModel(state: SqlWorkflowStateType) {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
   const systemPromptPath = join(__dirname, "systemPrompt.md");
+  const queriesContextPath = join(__dirname, "queries.json");
   const systemPromptContent = readFileSync(systemPromptPath, "utf-8");
+  const queriesContext = readFileSync(queriesContextPath, "utf-8");
 
-  // Create a ChatPromptTemplate with the system message and user messages
-  const promptTemplate = ChatPromptTemplate.fromMessages([
-    ["system", systemPromptContent],
-    new MessagesPlaceholder("messages"),
-  ]);
-
-  // Format the prompt with the current messages
-  const formattedMessages = await promptTemplate.formatMessages({
-    messages: state.messages,
+  // Combine system prompt with queries context
+  const systemPromptTemplate = PromptTemplate.fromTemplate(systemPromptContent);
+  const systemPrompt = await systemPromptTemplate.format({
+    queriesContext: queriesContext,
   });
 
-  const response = await model.invoke(formattedMessages);
+  // Create a ChatPromptTemplate with the system message and user messages
+  // const promptTemplate = ChatPromptTemplate.fromMessages([
+  //   ["system", systemPromptContent],
+  //   new MessagesPlaceholder("messages"),
+  // ]);
+
+  // // Format the prompt with the current messages
+  // const formattedMessages = await promptTemplate.formatMessages({
+  //   messages: state.messages,
+  // });
+  const lastUserMessage = state.messages.filter(
+    (message) => message instanceof HumanMessage
+  )[state.messages.length - 1];
+
+  const response = await model.invoke([
+    new SystemMessage(systemPrompt),
+    lastUserMessage,
+  ]);
 
   // We return a list, because this will get added to the existing list
   return { messages: [response] };

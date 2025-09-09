@@ -70,6 +70,11 @@ async function selectWorkflow() {
 }
 
 async function main() {
+  // Check for command line arguments
+  const args = process.argv.slice(2);
+  const commandArg = args[0];
+
+  // Original interactive mode
   intro("🤖 LangGraph Application");
   let workflow;
   let config = CONFIG_DEFAULT;
@@ -86,6 +91,8 @@ async function main() {
       console.warn(`Can't build default workflow: ${error}`);
     }
   }
+  let choice;
+  let initialized = false;
   while (true) {
     try {
       config = loadAppConfig();
@@ -97,17 +104,28 @@ async function main() {
       config = CONFIG_DEFAULT;
     }
     try {
-      const choice = await select({
-        message: "What would you like to do?",
-        options: [
-          { value: "setupModel", label: "Setup/Configure Model & Credentials" },
-          { value: "setupDatabase", label: "Setup/Configure Database" },
-          { value: "selectWorkflow", label: "Select Workflow" },
-          { value: "viewWorkflow", label: "View LangGraph Workflow Diagram" },
-          { value: "runConversation", label: "Chat with the Workflow" },
-          { value: "exit", label: "Exit Application" },
-        ],
-      });
+      if (!initialized && commandArg) {
+        choice = commandArg as any;
+      } else {
+        choice = await select({
+          message: "What would you like to do?",
+          options: [
+            {
+              value: "setupModel",
+              label: "Setup/Configure Model & Credentials",
+            },
+            { value: "setupDatabase", label: "Setup/Configure Database" },
+            { value: "selectWorkflow", label: "Select Workflow" },
+            {
+              value: "viewWorkflow",
+              label: "View LangGraph Workflow Diagram",
+            },
+            { value: "runConversation", label: "Chat with the Workflow" },
+            { value: "exit", label: "Exit Application" },
+          ],
+        });
+      }
+      initialized = true;
 
       if (choice === "setupModel") {
         const success = await setupModel();
