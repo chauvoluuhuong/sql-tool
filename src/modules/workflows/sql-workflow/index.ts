@@ -11,7 +11,7 @@ import { buildModel } from "modules/ai";
 import { loadCredentials } from "modules/setup/setupModel";
 import { callModel, shouldContinue, executeTools } from "./nodes";
 import { dbManager } from "@/modules/database/connection";
-import { SqlWorkflowState } from "./types";
+import { OutPutStructureSchema, SqlWorkflowState } from "./types";
 import { MemorySaver } from "@langchain/langgraph-checkpoint";
 // Define custom state for SQL workflow
 
@@ -22,7 +22,7 @@ export const buildWorkflow = async () => {
   await dbManager.initialize();
   const credentials = await loadCredentials();
 
-  const model = buildModel(credentials, tools);
+  const model = buildModel(credentials, tools, OutPutStructureSchema);
   if (!model) {
     throw new Error("Failed to create model");
   }

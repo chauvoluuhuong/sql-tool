@@ -31,10 +31,6 @@ export const buildModel = (
     model = model.bindTools(toolsProvided);
   }
 
-  // if (systemPrompt) {
-  //   model = model.bind({ systemMessage: systemPrompt });
-  // }
-
   return model;
 };
 

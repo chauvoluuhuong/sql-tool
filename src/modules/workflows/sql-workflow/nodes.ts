@@ -43,9 +43,10 @@ export async function callModel(state: SqlWorkflowStateType) {
   // const formattedMessages = await promptTemplate.formatMessages({
   //   messages: state.messages,
   // });
-  const lastUserMessage = state.messages.filter(
+  const userMessages = state.messages.filter(
     (message) => message instanceof HumanMessage
-  )[state.messages.length - 1];
+  );
+  const lastUserMessage = userMessages[userMessages.length - 1];
 
   const response = await model.invoke([
     new SystemMessage(systemPrompt),
