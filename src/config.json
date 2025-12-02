@@ -1,14 +1,26 @@
 {
   "modelUsed": {
     "modelType": "openai",
-    "modelName": "gemini-2.5-flash"
+    "modelName": "gemini-2.5-flash",
+    "apiKey": "AIzaSyAgTS7f_pplwaH-sWvg6CE_kzMfQVAD-Wk"
   },
   "gemini": {
     "modelType": "openai",
-    "modelName": "gemini-2.5-flash"
+    "modelName": "gemini-2.5-flash",
+    "apiKey": "AIzaSyAgTS7f_pplwaH-sWvg6CE_kzMfQVAD-Wk"
   },
   "openai": {
     "modelType": "gemini",
-    "modelName": "gpt-4"
-  }
+    "modelName": "gpt-4",
+    "apiKey": "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"
+  },
+  "selectedWorkflowName": "sql-workflow",
+  "DB_HOST": "localhost",
+  "DB_PORT": 5432,
+  "DB_NAME": "covergo",
+  "DB_USER": "postgres",
+  "DB_PASSWORD": "postgres",
+  "DB_SSL": false,
+  "OPENAI_API_KEY": "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",
+  "GOOGLE_API_KEY": "AIzaSyAgTS7f_pplwaH-sWvg6CE_kzMfQVAD-Wk"
 }

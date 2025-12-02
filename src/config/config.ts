@@ -1,12 +1,17 @@
-import { writeFileSync, readFileSync } from "fs";
+import { writeFileSync, readFileSync, existsSync } from "fs";
 import { join } from "path";
 
 import dotenv from "dotenv";
 import path from "path";
+import { Config, CONFIG_DEFAULT } from "./types";
+import lodash from "lodash";
 
 export const loadEnvConfigFromFile = () => {
   const envPath = path.join(process.cwd(), ".env");
   dotenv.config({ path: envPath });
+  if (!existsSync(envPath)) {
+    return {};
+  }
   return dotenv.parse(readFileSync(envPath, "utf8"));
 };
 
@@ -24,12 +29,6 @@ export interface EnvConfig {
 export interface ModelConfig {
   modelType: string;
   modelName: string;
-}
-
-export interface AppConfig {
-  modelUsed: ModelConfig;
-  gemini: ModelConfig;
-  openai: ModelConfig;
 }
 
 // Load environment variables
@@ -78,20 +77,27 @@ export const writeEnvConfig = (envConfig: string) => {
 };
 
 // Load app config from JSON
-export function loadAppConfig(): AppConfig {
-  // This would typically load from a config file or environment
-  return {
-    modelUsed: {
-      modelType: "openai",
-      modelName: "gpt-4",
-    },
-    gemini: {
-      modelType: "gemini",
-      modelName: "gemini-2.5-flash",
-    },
-    openai: {
-      modelType: "openai",
-      modelName: "gpt-4",
-    },
-  };
+export function loadAppConfig(): Config {
+  var config = CONFIG_DEFAULT;
+  const configPath = path.join(process.cwd(), "src", "config.json");
+  try {
+    const envConfig = loadEnvConfig();
+    if (!existsSync(configPath)) {
+      writeFileSync(configPath, JSON.stringify(config, null, 2), "utf8");
+    } else {
+      const configSaved = JSON.parse(readFileSync(configPath, "utf8")) as any;
+      config = lodash.merge(CONFIG_DEFAULT, configSaved);
+      config = lodash.merge(config, envConfig);
+    }
+  } catch (error) {
+    // in case the config file store error content -> just override it
+    writeFileSync(configPath, JSON.stringify(config, null, 2), "utf8");
+    console.error("Error loading app config:", error);
+  }
+  return config;
+}
+
+export function writeAppConfig(config: Config) {
+  const configPath = path.join(process.cwd(), "src", "config.json");
+  writeFileSync(configPath, JSON.stringify(config, null, 2), "utf8");
 }

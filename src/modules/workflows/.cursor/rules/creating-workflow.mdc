@@ -1,0 +1,159 @@
+# Creating Workflow Rule
+
+When creating new workflows in this project, follow the established structure and patterns from the `sql-workflow` module. This rule ensures consistency and maintainability across all workflow implementations.
+
+## Required File Structure
+
+Every workflow must be created in `src/modules/workflows/{workflow-name}/` with the following files:
+
+### 1. `index.ts` - Main Workflow Definition
+
+- Import required LangGraph components: `StateGraph`, `MessagesAnnotation`, `Annotation`
+- Import core dependencies: `BaseMessage`, environment config, tools, model setup
+- Define custom state interface using `Annotation.Root()` with:
+  - `messages: Annotation<BaseMessage[]>` (required)
+  - Custom state fields specific to the workflow
+- Export `buildWorkflow()` function that:
+  - Initializes any required services/databases
+  - Loads credentials and builds the model
+  - Creates and configures the `StateGraph`
+  - Adds nodes and edges
+  - Returns compiled graph
+
+### 2. `nodes.ts` - Workflow Node Functions
+
+- `callModel()` - Main agent node that processes messages
+  - Reads system prompt from markdown file
+  - Creates `ChatPromptTemplate` with system message and user messages
+  - Invokes model and returns response
+- `shouldContinue()` - Conditional edge function
+  - Checks if last message has tool calls
+  - Routes to "tools" node if tool calls exist, otherwise "**end**"
+- `executeTools()` - Tool execution node
+  - Processes tool calls from last message
+  - Executes tools and captures results
+  - Handles errors gracefully
+  - Returns tool responses and results
+
+### 3. `tools.ts` - Workflow Tools
+
+- Define custom `Tool` classes extending `@langchain/core/tools`
+- Implement `_call()` method for tool logic
+- Export `tools` array with all available tools
+- Include proper error handling and input validation
+
+### 4. `types.ts` - Type Definitions
+
+- Define interfaces for workflow-specific data structures
+- Export types used across the workflow
+- Keep types focused and minimal
+
+### 5. `systemPrompt.md` - System Instructions
+
+- Write clear, comprehensive system prompt
+- Include role definition and core behavior rules
+- Define tool use policies and safety guidelines
+- Specify output formats and clarification rules
+
+### 6. `queries.json` - Predefined Queries (if applicable)
+
+- JSON array of query objects with:
+  - `queryName`: Unique identifier
+  - `query`: SQL/query string
+  - `description`: Human-readable description
+  - `parameters`: Array of parameter definitions (optional)
+
+## Implementation Guidelines
+
+### State Management
+
+- Use `Annotation.Root()` to define workflow state
+- Always include `messages` field for conversation history
+- Add workflow-specific fields as needed
+- Use proper TypeScript typing
+
+### Node Design
+
+- Keep nodes focused on single responsibilities
+- Implement proper error handling
+- Use async/await for asynchronous operations
+- Return state updates in expected format
+
+### Tool Implementation
+
+- Extend `Tool` class from `@langchain/core/tools`
+- Implement proper input validation
+- Handle errors gracefully
+- Return structured, readable responses
+
+### System Prompt
+
+- Be specific about the agent's role and capabilities
+- Define clear policies for tool usage
+- Include safety and validation rules
+- Specify output formats
+
+## LangGraph.js Integration
+
+### Graph Construction
+
+```typescript
+return new StateGraph(WorkflowState)
+  .addNode("agent", callModel)
+  .addEdge("__start__", "agent")
+  .addNode("tools", executeTools)
+  .addEdge("tools", "agent")
+  .addConditionalEdges("agent", shouldContinue)
+  .compile();
+```
+
+### State Annotations
+
+```typescript
+export const WorkflowState = Annotation.Root({
+  messages: Annotation<BaseMessage[]>,
+  // Add custom fields as needed
+});
+```
+
+### Conditional Edges
+
+- Use `shouldContinue()` function to determine routing
+- Return node names for routing decisions
+- Use "**end**" for workflow completion
+
+## Best Practices
+
+1. **Modularity**: Keep each file focused on a single concern
+2. **Error Handling**: Implement comprehensive error handling in all nodes and tools
+3. **Type Safety**: Use TypeScript interfaces for all data structures
+4. **Documentation**: Include clear comments and documentation
+5. **Testing**: Design nodes and tools to be testable
+6. **Configuration**: Use environment variables for configuration
+7. **Security**: Validate all inputs and handle sensitive data appropriately
+
+## File Naming Conventions
+
+- Use kebab-case for workflow directory names: `workflow-name`
+- Use camelCase for function and variable names
+- Use PascalCase for class and interface names
+- Use descriptive names that indicate purpose
+
+## Integration Points
+
+- Import from `modules/ai` for model functionality
+- Import from `modules/setup` for configuration
+- Import from `modules/database` for database operations
+- Import from `modules/shared/tools` for common utilities
+
+## Do Not Create
+
+- README files (unless specifically requested)
+- Additional files beyond the required structure
+- Duplicate functionality that exists in shared modules
+- Workflows without proper state management
+
+This structure ensures consistency with the existing codebase and follows LangGraph.js best practices for building reliable, maintainable AI workflows.
+alwaysApply: false
+
+---

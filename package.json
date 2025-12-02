@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/app.js",
-    "dev:watch": "tsx watch app.ts",
+    "dev:watch": "tsx watch src/app.ts",
+    "dev:runConversation": "tsx src/app.ts runConversation",
     "dev": "tsx src/app.ts",
     "clean": "rm -rf dist"
   },
@@ -31,6 +32,7 @@
     "lodash": "^4.17.21",
     "ora": "^7.0.1",
     "pg": "^8.11.3",
+    "uuid": "^11.1.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {

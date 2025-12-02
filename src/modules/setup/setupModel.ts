@@ -3,41 +3,7 @@ import { writeFileSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 import _ from "lodash";
 import { createEnvConfig, writeEnvConfig } from "../../config/config";
-
-export enum ModelType {
-  OPENAI = "openai",
-  GEMINI = "gemini",
-}
-
-export interface ModelInfo {
-  modelType?: ModelType;
-  modelName?: string;
-  apiKey?: string;
-}
-
-export interface Config {
-  modelUsed: ModelInfo;
-  [ModelType.OPENAI]: ModelInfo;
-  [ModelType.GEMINI]: ModelInfo;
-}
-
-const CONFIG_DEFAULT: Config = {
-  modelUsed: {
-    modelType: ModelType.OPENAI,
-    modelName: "gpt-4",
-    apiKey: process.env.OPENAI_API_KEY,
-  },
-  [ModelType.GEMINI]: {
-    modelType: ModelType.GEMINI,
-    modelName: "gemini-2.5-flash",
-    apiKey: process.env.GOOGLE_API_KEY,
-  },
-  [ModelType.OPENAI]: {
-    modelType: ModelType.OPENAI,
-    modelName: "gpt-4",
-    apiKey: process.env.OPENAI_API_KEY,
-  },
-};
+import { ModelType, Config, CONFIG_DEFAULT } from "../../config/types";
 
 export async function setupModel() {
   intro("🤖 LangGraph Model Setup");

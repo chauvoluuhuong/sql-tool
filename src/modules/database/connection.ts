@@ -1,6 +1,6 @@
 import { Pool, PoolClient } from "pg";
 import chalk from "chalk";
-import { EnvConfig } from "../../config/config";
+import { EnvConfig, loadEnvConfig } from "../../config/config";
 
 export interface DatabaseConfig {
   DB_HOST: string;
@@ -15,16 +15,16 @@ class DatabaseManager {
   private pool: Pool | null = null;
   private config: DatabaseConfig | null = null;
 
-  async initialize(config: DatabaseConfig): Promise<void> {
-    this.config = config;
+  async initialize(config?: DatabaseConfig): Promise<void> {
+    this.config = config || (loadEnvConfig() as DatabaseConfig);
 
     this.pool = new Pool({
-      host: config.DB_HOST,
-      port: config.DB_PORT,
-      database: config.DB_NAME,
-      user: config.DB_USER,
-      password: config.DB_PASSWORD,
-      ssl: config.DB_SSL ? { rejectUnauthorized: false } : false,
+      host: this.config.DB_HOST,
+      port: this.config.DB_PORT,
+      database: this.config.DB_NAME,
+      user: this.config.DB_USER,
+      password: this.config.DB_PASSWORD,
+      ssl: this.config.DB_SSL ? { rejectUnauthorized: false } : false,
       max: 10, // Maximum number of clients in the pool
       idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
       connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
@@ -77,7 +77,7 @@ class DatabaseManager {
     return this.pool !== null;
   }
 
-  getConfig(): EnvConfig | null {
+  getConfig() {
     return this.config;
   }
 }
